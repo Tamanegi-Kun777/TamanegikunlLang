@@ -136,6 +136,9 @@ llvm::Value *CodeGen::generateStatement(BaseAST *stmt){
   else if(llvm::isa<IfStmtAST>(stmt)){
     return generateIfStatement(llvm::dyn_cast<IfStmtAST>(stmt));
   }
+  else if(llvm::isa<WhileStmtAST>(stmt)){
+    return generateWhileStatement(llvm::dyn_cast<WhileStmtAST>(stmt));
+  }
   else{
     return NULL;
   }
@@ -209,6 +212,50 @@ llvm::Value *CodeGen::generateIfStatement(IfStmtAST *if_stmt){
     Builder->SetInsertPoint(merge_bb);
   }
   return merge_bb;
+}
+llvm::Value *CodeGen::generateWhileStatement(WhileStmtAST *while_stmt){
+  // 3つのブロックを作る
+  llvm::BasicBlock *cond_bb = llvm::BasicBlock::Create(Context, "cond", CurFunc);
+  llvm::BasicBlock *body_bb = llvm::BasicBlock::Create(Context, "body", CurFunc);
+  llvm::BasicBlock *after_bb = llvm::BasicBlock::Create(Context, "after", CurFunc);
+
+  // entryから条件チェックへ無条件ジャンプ
+  Builder->CreateBr(cond_bb);
+
+  // condブロック: 条件を評価して分岐
+  Builder->SetInsertPoint(cond_bb);
+  BaseAST *cond = while_stmt->getCondition();
+  llvm::Value *cond_v = NULL;
+  if(llvm::isa<BinaryExprAST>(cond)){
+    cond_v = generateBinaryExprssion(llvm::dyn_cast<BinaryExprAST>(cond));
+  }
+  else if(llvm::isa<VariableAST>(cond)){
+    cond_v = generateVariable(llvm::dyn_cast<VariableAST>(cond));
+  }
+  else if(llvm::isa<NumberAST>(cond)){
+    cond_v = generateNumber(llvm::dyn_cast<NumberAST>(cond)->getNumberValue());
+  }
+  if(!cond_v){
+    return NULL;
+  }
+  // 条件が真ならbody、偽ならafter
+  Builder->CreateCondBr(cond_v, body_bb, after_bb);
+
+  // bodyブロック: 本体を生成
+  Builder->SetInsertPoint(body_bb);
+  BaseAST *stmt;
+  for(int i = 0; (stmt = while_stmt->getBodyStmt(i)); i++){
+    generateStatement(stmt);
+  }
+  // bodyが終端を持っていなければ、condへ戻る（ループ）
+  if(!Builder->GetInsertBlock()->getTerminator()){
+    Builder->CreateBr(cond_bb);
+  }
+
+  // 以降の命令はafterブロックに積む
+  Builder->SetInsertPoint(after_bb);
+
+  return after_bb;
 }
 llvm::Value *CodeGen::generateBinaryExprssion(BinaryExprAST *bin_expr){
   BaseAST *lhs = bin_expr->getLHS();

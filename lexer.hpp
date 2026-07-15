@@ -18,6 +18,7 @@ enum TokenType
   TOK_RETURN,
   TOK_IF,
   TOK_ELSE,
+  TOK_WHILE, // WHILE
   TOK_EOF
 };
 

@@ -600,10 +600,79 @@ BaseAST *Parser::visitIfStatement(){
   }
   return if_stmt;
 }
+BaseAST *Parser::visitWhileStatement(){
+  DBG("[DEBUG] visitWhileStatement start, curType=%d, curStr=%s\n", Tokens->getCurType(), Tokens->getCurString().c_str());
+  int bkup = Tokens->getCurIndex();
+
+  // "while"
+  if(Tokens->getCurType() != TOK_WHILE){
+    return NULL;
+  }
+  Tokens->getNextToken();
+
+  // "("
+  if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "("){
+    Tokens->getNextToken();
+  }
+  else{
+    Tokens->applyTokenIndex(bkup);
+    return NULL;
+  }
+
+  // 条件式
+  BaseAST *condition = visitAssignmentExpression();
+  if(!condition){
+    Tokens->applyTokenIndex(bkup);
+    return NULL;
+  }
+
+  // ")"
+  if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == ")"){
+    Tokens->getNextToken();
+  }
+  else{
+    SAFE_DELETE(condition);
+    Tokens->applyTokenIndex(bkup);
+    return NULL;
+  }
+
+  // "{"
+  if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "{"){
+    Tokens->getNextToken();
+  }
+  else{
+    SAFE_DELETE(condition);
+    Tokens->applyTokenIndex(bkup);
+    return NULL;
+  }
+
+  WhileStmtAST *while_stmt = new WhileStmtAST(condition);
+
+  // body: statementの並び
+  BaseAST *stmt;
+  while((stmt = visitStatement())){
+    while_stmt->addBodyStmt(stmt);
+  }
+
+  // "}"
+  if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "}"){
+    Tokens->getNextToken();
+  }
+  else{
+    SAFE_DELETE(while_stmt);
+    Tokens->applyTokenIndex(bkup);
+    return NULL;
+  }
+
+  return while_stmt;
+}
 BaseAST *Parser::visitStatement(){
   DBG("[DEBUG] visitStatement start, curType=%d, curStr=%s\n", Tokens->getCurType(), Tokens->getCurString().c_str());//追加
   BaseAST *stmt = NULL;
   if((stmt = visitIfStatement())){
+    return stmt;
+  }
+  else if((stmt = visitWhileStatement())){
     return stmt;
   }
   else if((stmt = visitExpressionStatement())){

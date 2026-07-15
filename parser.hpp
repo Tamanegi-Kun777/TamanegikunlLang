@@ -46,6 +46,7 @@ private:
   VariableDeclAST *visitVariableDeclaration();
   BaseAST *visitStatement();
   BaseAST *visitIfStatement();
+  BaseAST *visitWhileStatement();
   BaseAST *visitExpressionStatement();
   BaseAST *visitJumpStatement();
   BaseAST *visitAssignmentExpression();

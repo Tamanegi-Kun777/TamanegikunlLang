@@ -18,7 +18,8 @@ enum AstID
   JumpStmtID,
   VariableID,
   NumberID,
-  IfStmtID
+  IfStmtID,
+  WhileStmtID
 };
 // ファイルの、先頭あたりに、追加
 class PrototypeAST;
@@ -201,6 +202,27 @@ public:
   };
   BaseAST *getElseStmt(int i){
     if(i < ElseStmts.size()){ return ElseStmts.at(i); }
+    else{ return NULL; }
+  };
+};
+/*
+ *  while文を表すAST
+ */
+class WhileStmtAST : public BaseAST
+{
+  BaseAST *Condition;
+  std::vector<BaseAST*> BodyStmts;
+public:
+  WhileStmtAST(BaseAST *condition) : BaseAST(WhileStmtID), Condition(condition){};
+  ~WhileStmtAST(){SAFE_DELETE(Condition);};
+  static inline bool classof(WhileStmtAST const*){return true;};
+  static inline bool classof(BaseAST const* base){
+    return base->getValueID() == WhileStmtID;
+  };
+  BaseAST *getCondition(){return Condition;};
+  bool addBodyStmt(BaseAST *stmt){BodyStmts.push_back(stmt); return true;};
+  BaseAST *getBodyStmt(int i){
+    if(i < BodyStmts.size()){ return BodyStmts.at(i); }
     else{ return NULL; }
   };
 };
