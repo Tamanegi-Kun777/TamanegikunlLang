@@ -45,10 +45,12 @@ private:
   FunctionStmtAST *visitFunctionStatement(PrototypeAST *proto);
   VariableDeclAST *visitVariableDeclaration();
   BaseAST *visitStatement();
+  BaseAST *visitIfStatement();
   BaseAST *visitExpressionStatement();
   BaseAST *visitJumpStatement();
   BaseAST *visitAssignmentExpression();
   BaseAST *visitAdditiveExpression(BaseAST *lhs);
+  BaseAST *visitRelationalExpression();
   BaseAST *visitMultiplicativeExpression(BaseAST *lhs);
   BaseAST *visitPostfixExpression();
   BaseAST *visitPrimaryExpression();

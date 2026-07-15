@@ -288,7 +288,7 @@ BaseAST *Parser::visitAssignmentExpression(){
       BaseAST *rhs;
       if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "="){
         Tokens->getNextToken();
-        if((rhs = visitAdditiveExpression(NULL))){
+        if((rhs = visitRelationalExpression())){
           return new BinaryExprAST("=", lhs, rhs);
         }
         else{
@@ -305,7 +305,7 @@ BaseAST *Parser::visitAssignmentExpression(){
       Tokens->applyTokenIndex(bkup);
     }
   }
-  BaseAST *add_expr = visitAdditiveExpression(NULL);
+  BaseAST *add_expr = visitRelationalExpression();
   if(add_expr){
     return add_expr;
   }
@@ -448,7 +448,37 @@ BaseAST *Parser::visitAdditiveExpression(BaseAST *lhs){
 
   return lhs;
 }
+BaseAST *Parser::visitRelationalExpression(){
+  DBG("[DEBUG] visitRelationalExpression start, curType=%d, curStr=%s\n", Tokens->getCurType(), Tokens->getCurString().c_str());
+  int bkup = Tokens->getCurIndex();
 
+  BaseAST *lhs = visitAdditiveExpression(NULL);
+  if(!lhs){
+    return NULL;
+  }
+
+  if(Tokens->getCurType() == TOK_SYMBOL &&
+     (Tokens->getCurString() == "<" ||
+      Tokens->getCurString() == ">" ||
+      Tokens->getCurString() == "<=" ||
+      Tokens->getCurString() == ">=" ||
+      Tokens->getCurString() == "==" ||
+      Tokens->getCurString() == "!=")){
+    std::string op = Tokens->getCurString();
+    Tokens->getNextToken();
+    BaseAST *rhs = visitAdditiveExpression(NULL);
+    if(rhs){
+      return new BinaryExprAST(op, lhs, rhs);
+    }
+    else{
+      SAFE_DELETE(lhs);
+      Tokens->applyTokenIndex(bkup);
+      return NULL;
+    }
+  }
+
+  return lhs;
+}
 BaseAST *Parser::visitExpressionStatement(){
   DBG("[DEBUG] visitExpressionStatement start, curType=%d, curStr=%s\n", Tokens->getCurType(), Tokens->getCurString().c_str());//追加
   BaseAST *assign_expr;
@@ -464,11 +494,109 @@ BaseAST *Parser::visitExpressionStatement(){
   }
   return NULL;
 }
+BaseAST *Parser::visitIfStatement(){
+  DBG("[DEBUG] visitIfStatement start, curType=%d, curStr=%s\n", Tokens->getCurType(), Tokens->getCurString().c_str());
+  int bkup = Tokens->getCurIndex();
 
+  // "if"
+  if(Tokens->getCurType() != TOK_IF){
+    return NULL;
+  }
+  Tokens->getNextToken();
+
+  // "("
+  if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "("){
+    Tokens->getNextToken();
+  }
+  else{
+    Tokens->applyTokenIndex(bkup);
+    return NULL;
+  }
+
+  // 条件式
+  BaseAST *condition = visitAssignmentExpression();
+  if(!condition){
+    Tokens->applyTokenIndex(bkup);
+    return NULL;
+  }
+
+  // ")"
+  if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == ")"){
+    Tokens->getNextToken();
+  }
+  else{
+    SAFE_DELETE(condition);
+    Tokens->applyTokenIndex(bkup);
+    return NULL;
+  }
+
+  // "{"
+  if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "{"){
+    Tokens->getNextToken();
+  }
+  else{
+    SAFE_DELETE(condition);
+    Tokens->applyTokenIndex(bkup);
+    return NULL;
+  }
+
+  IfStmtAST *if_stmt = new IfStmtAST(condition);
+
+  // then節: statementの並び
+  BaseAST *stmt;
+  while((stmt = visitStatement())){
+    if_stmt->addThenStmt(stmt);
+  }
+
+  // "}"
+  if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "}"){
+    Tokens->getNextToken();
+  }
+  else{
+    SAFE_DELETE(if_stmt);
+    Tokens->applyTokenIndex(bkup);
+    return NULL;
+  }
+
+  // else節(省略可能)
+  if(Tokens->getCurType() == TOK_ELSE){
+    Tokens->getNextToken();
+
+    // "{"
+    if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "{"){
+      Tokens->getNextToken();
+    }
+    else{
+      SAFE_DELETE(if_stmt);
+      Tokens->applyTokenIndex(bkup);
+      return NULL;
+    }
+
+    // else節: statementの並び
+    while((stmt = visitStatement())){
+      if_stmt->addElseStmt(stmt);
+    }
+
+    // "}"
+    if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "}"){
+      Tokens->getNextToken();
+    }
+    else{
+      SAFE_DELETE(if_stmt);
+      Tokens->applyTokenIndex(bkup);
+      return NULL;
+    }
+  }
+
+  return if_stmt;
+}
 BaseAST *Parser::visitStatement(){
   DBG("[DEBUG] visitStatement start, curType=%d, curStr=%s\n", Tokens->getCurType(), Tokens->getCurString().c_str());//追加
   BaseAST *stmt = NULL;
-  if((stmt = visitExpressionStatement())){
+  if((stmt = visitIfStatement())){
+    return stmt;
+  }
+  else if((stmt = visitExpressionStatement())){
     return stmt;
   }
   else if((stmt = visitJumpStatement())){

@@ -44,6 +44,7 @@ private:
   llvm::Value *generateFunctionStatement(FunctionStmtAST *func_stmt);
   llvm::Value *generateVariableDeclaration(VariableDeclAST *vdecl);
   llvm::Value *generateStatement(BaseAST *stmt);
+  llvm::Value *generateIfStatement(IfStmtAST *if_stmt);
   llvm::Value *generateBinaryExprssion(BinaryExprAST *bin_expr);
   llvm::Value *generateCallExpression(CallExprAST *call_expr);
   llvm::Value *generateJumpStatement(JumpStmtAST *jump_stmt);

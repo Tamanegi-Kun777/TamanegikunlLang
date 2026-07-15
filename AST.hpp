@@ -17,7 +17,8 @@ enum AstID
   CallExprID,
   JumpStmtID,
   VariableID,
-  NumberID
+  NumberID,
+  IfStmtID
 };
 // ファイルの、先頭あたりに、追加
 class PrototypeAST;
@@ -176,7 +177,33 @@ public:
 
   BaseAST *getExpr(){return Expr;};
 };
-
+/*
+ *  if文を表すAST
+ */
+class IfStmtAST : public BaseAST
+{
+  BaseAST *Condition;
+  std::vector<BaseAST*> ThenStmts;
+  std::vector<BaseAST*> ElseStmts;
+public:
+  IfStmtAST(BaseAST *condition) : BaseAST(IfStmtID), Condition(condition){};
+  ~IfStmtAST(){SAFE_DELETE(Condition);};
+  static inline bool classof(IfStmtAST const*){return true;};
+  static inline bool classof(BaseAST const* base){
+    return base->getValueID() == IfStmtID;
+  };
+  BaseAST *getCondition(){return Condition;};
+  bool addThenStmt(BaseAST *stmt){ThenStmts.push_back(stmt); return true;};
+  bool addElseStmt(BaseAST *stmt){ElseStmts.push_back(stmt); return true;};
+  BaseAST *getThenStmt(int i){
+    if(i < ThenStmts.size()){ return ThenStmts.at(i); }
+    else{ return NULL; }
+  };
+  BaseAST *getElseStmt(int i){
+    if(i < ElseStmts.size()){ return ElseStmts.at(i); }
+    else{ return NULL; }
+  };
+};
 /*
  *  変数参照を表すAST
  */

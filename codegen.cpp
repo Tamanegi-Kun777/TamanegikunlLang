@@ -133,11 +133,52 @@ llvm::Value *CodeGen::generateStatement(BaseAST *stmt){
   else if(llvm::isa<JumpStmtAST>(stmt)){
     return generateJumpStatement(llvm::dyn_cast<JumpStmtAST>(stmt));
   }
+  else if(llvm::isa<IfStmtAST>(stmt)){
+    return generateIfStatement(llvm::dyn_cast<IfStmtAST>(stmt));
+  }
   else{
     return NULL;
   }
 }
+llvm::Value *CodeGen::generateIfStatement(IfStmtAST *if_stmt){
+  // 条件式を生成（i1が返る）
+  BaseAST *cond = if_stmt->getCondition();
+  llvm::Value *cond_v = NULL;
+  if(llvm::isa<BinaryExprAST>(cond)){
+    cond_v = generateBinaryExprssion(llvm::dyn_cast<BinaryExprAST>(cond));
+  }
+  else if(llvm::isa<VariableAST>(cond)){
+    cond_v = generateVariable(llvm::dyn_cast<VariableAST>(cond));
+  }
+  else if(llvm::isa<NumberAST>(cond)){
+    cond_v = generateNumber(llvm::dyn_cast<NumberAST>(cond)->getNumberValue());
+  }
+  if(!cond_v){
+    return NULL;
+  }
 
+  // then用と合流(merge)用のBasicBlockを作る
+  llvm::BasicBlock *then_bb = llvm::BasicBlock::Create(Context, "then", CurFunc);
+  llvm::BasicBlock *merge_bb = llvm::BasicBlock::Create(Context, "merge", CurFunc);
+
+  // 条件で分岐: 真ならthen、偽ならmerge
+  Builder->CreateCondBr(cond_v, then_bb, merge_bb);
+
+  // thenブロックに命令を積んでいく
+  Builder->SetInsertPoint(then_bb);
+  BaseAST *stmt;
+  for(int i = 0; (stmt = if_stmt->getThenStmt(i)); i++){
+    generateStatement(stmt);
+  }
+  // thenブロックが既に終端(retなど)を持っていなければmergeへジャンプ
+  if(!Builder->GetInsertBlock()->getTerminator()){
+    Builder->CreateBr(merge_bb);
+  }
+  // 以降の命令は合流ブロックに積む
+  Builder->SetInsertPoint(merge_bb);
+
+  return merge_bb;
+}
 llvm::Value *CodeGen::generateBinaryExprssion(BinaryExprAST *bin_expr){
   BaseAST *lhs = bin_expr->getLHS();
   BaseAST *rhs = bin_expr->getRHS();
@@ -190,6 +231,24 @@ llvm::Value *CodeGen::generateBinaryExprssion(BinaryExprAST *bin_expr){
   }
   else if(bin_expr->getOp() == "/"){
     return Builder->CreateSDiv(lhs_v, rhs_v, "div_tmp");
+  }
+  else if(bin_expr->getOp() == "<"){
+    return Builder->CreateICmpSLT(lhs_v, rhs_v, "cmp_tmp");
+  }
+  else if(bin_expr->getOp() == ">"){
+    return Builder->CreateICmpSGT(lhs_v, rhs_v, "cmp_tmp");
+  }
+  else if(bin_expr->getOp() == "<="){
+    return Builder->CreateICmpSLE(lhs_v, rhs_v, "cmp_tmp");
+  }
+  else if(bin_expr->getOp() == ">="){
+    return Builder->CreateICmpSGE(lhs_v, rhs_v, "cmp_tmp");
+  }
+  else if(bin_expr->getOp() == "=="){
+    return Builder->CreateICmpEQ(lhs_v, rhs_v, "cmp_tmp");
+  }
+  else if(bin_expr->getOp() == "!="){
+    return Builder->CreateICmpNE(lhs_v, rhs_v, "cmp_tmp");
   }
   return NULL;
 }
