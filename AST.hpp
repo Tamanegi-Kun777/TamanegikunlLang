@@ -18,6 +18,7 @@ enum AstID
   JumpStmtID,
   VariableID,
   NumberID,
+  FloatNumberID,
   IfStmtID,
   WhileStmtID,
   ForStmtID,
@@ -367,6 +368,21 @@ public:
 
   //このASTは表現する値を取得する
   int getNumberValue(){return Val;};
+};
+/*
+ *  浮動小数点数を表すAST
+ */
+class FloatNumberAST : public BaseAST
+{
+  double Val;
+public:
+  FloatNumberAST(double val) : BaseAST(FloatNumberID), Val(val){};
+  ~FloatNumberAST(){};
+  static inline bool classof(FloatNumberAST const*){return true;};
+  static inline bool classof(BaseAST const* base){
+    return base->getValueID() == FloatNumberID;
+  };
+  double getValue(){return Val;};
 };
 /*
  *  ソースコードを表すAST

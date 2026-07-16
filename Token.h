@@ -18,6 +18,8 @@ enum TokenType {
     TOK_FOR, // FOR
     TOK_CLASS, // CLASS
     TOK_CHAR,
+    TOK_FLOAT, // FLOAT
+    TOK_DOUBLE, // DOUBLE
     TOK_EOF // EOF
 };
 

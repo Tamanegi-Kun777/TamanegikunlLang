@@ -63,6 +63,7 @@ private:
   llvm::Value *generateJumpStatement(JumpStmtAST *jump_stmt);
   llvm::Value *generateVariable(VariableAST *var);
   llvm::Value *generateNumber(int value);
+  llvm::Value *generateFloatNumber(double value);
 };
 
 #endif

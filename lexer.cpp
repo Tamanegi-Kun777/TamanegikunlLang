@@ -77,6 +77,9 @@ TokenStream *LexicalAnalysis(std::string input_filename){
         else if(token_str == "char"){
           next_token = new Token(token_str, TOK_CHAR, line_num);
         }
+        else if(token_str == "double"){
+          next_token = new Token(token_str, TOK_DOUBLE, line_num);
+        }
         else{
           next_token = new Token(token_str, TOK_IDENTIFIER, line_num);
         }
@@ -94,7 +97,23 @@ TokenStream *LexicalAnalysis(std::string input_filename){
             token_str += next_char;
             next_char = cur_line.at(index++);
           }
-          next_token = new Token(token_str, TOK_DIGIT, line_num);
+          bool is_float = false;
+          // 小数点があれば小数部を読む
+          if(next_char == '.'){
+            is_float = true;
+            token_str += next_char;
+            next_char = cur_line.at(index++);
+            while(isdigit(next_char)){
+              token_str += next_char;
+              next_char = cur_line.at(index++);
+            }
+          }
+          if(is_float){
+            next_token = new Token(token_str, TOK_FLOAT, line_num);
+          }
+          else{
+            next_token = new Token(token_str, TOK_DIGIT, line_num);
+          }
           index--;
         }
       }

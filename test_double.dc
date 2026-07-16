@@ -1,0 +1,6 @@
+int main(){
+  double d;
+  d = 3.14;
+  return d;
+}
+

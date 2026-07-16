@@ -88,6 +88,9 @@ llvm::Type *CodeGen::getLLVMType(const std::string &type_name){
   else if(type_name == "char"){
     return llvm::Type::getInt8Ty(Context);
   }
+  else if(type_name == "double"){
+    return llvm::Type::getDoubleTy(Context);
+  }
   else if(StructTypeTable.find(type_name) != StructTypeTable.end()){
     return StructTypeTable[type_name];
   }
@@ -108,6 +111,14 @@ llvm::Value *CodeGen::convertType(llvm::Value *value, llvm::Type *target_type){
     else{
       return Builder->CreateSExt(value, target_type, "sext");
     }
+  }
+  // 整数 → double
+  if(src_type->isIntegerTy() && target_type->isDoubleTy()){
+    return Builder->CreateSIToFP(value, target_type, "sitofp");
+  }
+  // double → 整数
+  if(src_type->isDoubleTy() && target_type->isIntegerTy()){
+    return Builder->CreateFPToSI(value, target_type, "fptosi");
   }
   return value;
 }
@@ -429,6 +440,9 @@ llvm::Value *CodeGen::generateBinaryExprssion(BinaryExprAST *bin_expr){
       NumberAST *num = llvm::dyn_cast<NumberAST>(lhs);
       lhs_v = generateNumber(num->getNumberValue());
     }
+    else if(llvm::isa<FloatNumberAST>(lhs)){
+      lhs_v = generateFloatNumber(llvm::dyn_cast<FloatNumberAST>(lhs)->getValue());
+    }
     else if(llvm::isa<MemberAccessAST>(lhs)){
       llvm::Value *addr = generateMemberAddress(llvm::dyn_cast<MemberAccessAST>(lhs));
       lhs_v = Builder->CreateLoad(llvm::Type::getInt32Ty(Context), addr, "member_tmp");
@@ -447,6 +461,9 @@ llvm::Value *CodeGen::generateBinaryExprssion(BinaryExprAST *bin_expr){
   else if(llvm::isa<NumberAST>(rhs)){
     NumberAST *num = llvm::dyn_cast<NumberAST>(rhs);
     rhs_v = generateNumber(num->getNumberValue());
+  }
+  else if(llvm::isa<FloatNumberAST>(rhs)){
+    rhs_v = generateFloatNumber(llvm::dyn_cast<FloatNumberAST>(rhs)->getValue());
   }
   else if(llvm::isa<MemberAccessAST>(rhs)){
     llvm::Value *addr = generateMemberAddress(llvm::dyn_cast<MemberAccessAST>(rhs));
@@ -607,4 +624,7 @@ llvm::Value *CodeGen::generateMethodCall(MemberAccessAST *member){
 }
 llvm::Value *CodeGen::generateNumber(int value){
   return llvm::ConstantInt::get(llvm::Type::getInt32Ty(Context), value);
+}
+llvm::Value *CodeGen::generateFloatNumber(double value){
+  return llvm::ConstantFP::get(llvm::Type::getDoubleTy(Context), value);
 }

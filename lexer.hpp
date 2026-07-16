@@ -22,6 +22,8 @@ enum TokenType
   TOK_FOR, // FOR
   TOK_CLASS, // CLASS
   TOK_CHAR,
+  TOK_FLOAT,
+  TOK_DOUBLE,
   TOK_EOF
 };
 

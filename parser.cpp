@@ -464,6 +464,11 @@ BaseAST *Parser::visitPrimaryExpression(){
     Tokens->getNextToken();
     return new NumberAST(val);
   }
+  else if(Tokens->getCurType() == TOK_FLOAT){
+    double val = atof(Tokens->getCurString().c_str());
+    Tokens->getNextToken();
+    return new FloatNumberAST(val);
+  }
   else if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "-"){
     /* omit */
   }
@@ -942,6 +947,10 @@ VariableDeclAST *Parser::visitVariableDeclaration(){
   }
   else if(Tokens->getCurType() == TOK_CHAR){
     type_name = "char";
+    Tokens->getNextToken();
+  }
+  else if(Tokens->getCurType() == TOK_DOUBLE){
+    type_name = "double";
     Tokens->getNextToken();
   }
   else if(Tokens->getCurType() == TOK_IDENTIFIER &&
