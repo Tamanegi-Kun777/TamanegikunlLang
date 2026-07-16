@@ -71,6 +71,9 @@ TokenStream *LexicalAnalysis(std::string input_filename){
         else if(token_str == "for"){
           next_token = new Token(token_str, TOK_FOR, line_num);
         }
+        else if(token_str == "class"){
+          next_token = new Token(token_str, TOK_CLASS, line_num);
+        }
         else{
           next_token = new Token(token_str, TOK_IDENTIFIER, line_num);
         }
@@ -138,7 +141,8 @@ TokenStream *LexicalAnalysis(std::string input_filename){
            next_char == '(' ||
            next_char == ')' ||
            next_char == '{' ||
-           next_char == '}' ){
+           next_char == '}' ||
+           next_char == '.' ){
            token_str += next_char;
            next_token = new Token(token_str, TOK_SYMBOL, line_num);
         }

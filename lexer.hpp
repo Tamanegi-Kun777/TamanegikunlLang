@@ -20,6 +20,7 @@ enum TokenType
   TOK_ELSE,
   TOK_WHILE, // WHILE
   TOK_FOR, // FOR
+  TOK_CLASS, // CLASS
   TOK_EOF
 };
 

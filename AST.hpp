@@ -20,7 +20,9 @@ enum AstID
   NumberID,
   IfStmtID,
   WhileStmtID,
-  ForStmtID
+  ForStmtID,
+  StructDeclID,
+  MemberAccessID
 };
 // ファイルの、先頭あたりに、追加
 class PrototypeAST;
@@ -65,10 +67,11 @@ public:
 
 private:
   std::string Name;
+  std::string TypeName;
   DeclType Type;
 
 public:
-  VariableDeclAST(const std::string &name) : BaseAST(VariableDeclID), Name(name){};
+  VariableDeclAST(const std::string &name, const std::string &type_name = "int") : BaseAST(VariableDeclID), Name(name), TypeName(type_name){};
 
   // VariableDeclASTなのでtrueを返す
   static inline bool classof(VariableDeclAST const*){return true;};
@@ -82,7 +85,8 @@ public:
 
   // 変数名を取得する
   std::string getName(){return Name;};
-
+  std::string getTypeName(){return TypeName;};
+  
   // 変数の宣言種別を設定する
   bool setDeclType(DeclType type){
     Type = type;
@@ -256,6 +260,55 @@ public:
     if(i < BodyStmts.size()){ return BodyStmts.at(i); }
     else{ return NULL; }
   };
+};
+/*
+ *  構造体定義を表すAST
+ */
+class StructDeclAST : public BaseAST
+{
+  std::string Name;
+  std::vector<std::string> MemberNames;
+  std::vector<std::string> MemberTypes;
+public:
+  StructDeclAST(const std::string &name) : BaseAST(StructDeclID), Name(name){};
+  ~StructDeclAST(){};
+  static inline bool classof(StructDeclAST const*){return true;};
+  static inline bool classof(BaseAST const* base){
+    return base->getValueID() == StructDeclID;
+  };
+  std::string getName(){return Name;};
+  bool addMember(const std::string &member_name, const std::string &member_type){
+    MemberNames.push_back(member_name);
+    MemberTypes.push_back(member_type);
+    return true;
+  };
+  int getMemberNum(){return MemberNames.size();};
+  std::string getMemberName(int i){
+    if(i < MemberNames.size()){ return MemberNames.at(i); }
+    else{ return ""; }
+  };
+  std::string getMemberType(int i){
+    if(i < MemberTypes.size()){ return MemberTypes.at(i); }
+    else{ return ""; }
+  };
+};
+/*
+ *  メンバアクセス(p.x)を表すAST
+ */
+class MemberAccessAST : public BaseAST
+{
+  std::string VariableName;
+  std::string MemberName;
+public:
+  MemberAccessAST(const std::string &var_name, const std::string &member_name)
+    : BaseAST(MemberAccessID), VariableName(var_name), MemberName(member_name){};
+  ~MemberAccessAST(){};
+  static inline bool classof(MemberAccessAST const*){return true;};
+  static inline bool classof(BaseAST const* base){
+    return base->getValueID() == MemberAccessID;
+  };
+  std::string getVariableName(){return VariableName;};
+  std::string getMemberName(){return MemberName;};
 };
 /*
  *  変数参照を表すAST

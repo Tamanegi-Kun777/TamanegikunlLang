@@ -50,6 +50,10 @@ bool Parser::visitTranslationUnit(){
 
 // ExternalDeclaration用構文解析メソッド
 bool Parser::visitExternalDeclaration(TranslationUnitAST *tunit){
+  StructDeclAST *struct_decl = visitStructDeclaration();
+  if(struct_decl){
+    return true;
+  }
   PrototypeAST *proto = visitFunctionDeclaration();
   if(proto){
     tunit->addPrototype(proto);
@@ -64,14 +68,89 @@ bool Parser::visitExternalDeclaration(TranslationUnitAST *tunit){
 
   return false;
 }
+StructDeclAST *Parser::visitStructDeclaration(){
+  DBG("[DEBUG] visitStructDeclaration start, curType=%d, curStr=%s\n", Tokens->getCurType(), Tokens->getCurString().c_str());
+  int bkup = Tokens->getCurIndex();
 
+  // "class"
+  if(Tokens->getCurType() != TOK_CLASS){
+    return NULL;
+  }
+  Tokens->getNextToken();
+
+  // 構造体名
+  std::string struct_name;
+  if(Tokens->getCurType() == TOK_IDENTIFIER){
+    struct_name = Tokens->getCurString();
+    Tokens->getNextToken();
+  }
+  else{
+    Tokens->applyTokenIndex(bkup);
+    return NULL;
+  }
+
+  // "{"
+  if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "{"){
+    Tokens->getNextToken();
+  }
+  else{
+    Tokens->applyTokenIndex(bkup);
+    return NULL;
+  }
+
+  StructDeclAST *struct_decl = new StructDeclAST(struct_name);
+
+  // メンバの並び: 型 メンバ名 ;
+  while(Tokens->getCurType() == TOK_INT){
+    // 型(今はintのみ)
+    std::string member_type = "int";
+    Tokens->getNextToken();
+
+    // メンバ名
+    std::string member_name;
+    if(Tokens->getCurType() == TOK_IDENTIFIER){
+      member_name = Tokens->getCurString();
+      Tokens->getNextToken();
+    }
+    else{
+      SAFE_DELETE(struct_decl);
+      Tokens->applyTokenIndex(bkup);
+      return NULL;
+    }
+
+    // ";"
+    if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == ";"){
+      Tokens->getNextToken();
+    }
+    else{
+      SAFE_DELETE(struct_decl);
+      Tokens->applyTokenIndex(bkup);
+      return NULL;
+    }
+
+    struct_decl->addMember(member_name, member_type);
+  }
+  // "}"
+  if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "}"){
+    Tokens->getNextToken();
+  }
+  else{
+    SAFE_DELETE(struct_decl);
+    Tokens->applyTokenIndex(bkup);
+    return NULL;
+  }
+
+  // StructTableに登録
+  StructTable[struct_name] = struct_decl;
+
+  return struct_decl;
+}
 PrototypeAST *Parser::visitFunctionDeclaration(){
   int bkup = Tokens->getCurIndex();
   PrototypeAST *proto = visitPrototype();
   if(!proto){
     return NULL;
   }
-
   // prototype
   if(Tokens->getCurString() == ";"){
     // 再定義されていないか確認
@@ -82,7 +161,6 @@ PrototypeAST *Parser::visitFunctionDeclaration(){
       SAFE_DELETE(proto);
       return NULL;
     }
-    // プロトタイプ宣言テーブルに追加
     PrototypeTable[proto->getName()] = proto->getParamNum();
     Tokens->getNextToken();
     return proto;
@@ -93,10 +171,8 @@ PrototypeAST *Parser::visitFunctionDeclaration(){
     return NULL;
   }
 }
-
 FunctionAST *Parser::visitFunctionDefinition(){
   int bkup = Tokens->getCurIndex();
-
   PrototypeAST *proto = visitPrototype();
   if(!proto){
     return NULL;
@@ -109,7 +185,6 @@ FunctionAST *Parser::visitFunctionDefinition(){
     SAFE_DELETE(proto);
     return NULL;
   }
-
   VariableTable.clear();
   // body をパースする前に関数名を登録（再帰呼び出しを可能にする）
   FunctionTable[proto->getName()] = proto->getParamNum();
@@ -219,46 +294,28 @@ FunctionStmtAST *Parser::visitFunctionStatement(PrototypeAST *proto){
     VariableTable.push_back(vdecl->getName());
   }
 
-  VariableDeclAST *var_decl;
+VariableDeclAST *var_decl;
   BaseAST *stmt;
-  BaseAST *last_stmt;
-  if((stmt = visitStatement())){
-    while(stmt){
-      last_stmt = stmt;
-      func_stmt->addStatement(stmt);
-      stmt = visitStatement();
-    }
-  }
-  else if((var_decl = visitVariableDeclaration())){
-    while(var_decl){
-      var_decl->setDeclType(VariableDeclAST::local);
+  BaseAST *last_stmt = NULL;
 
-      // 変数名の重複チェック
-      if(std::find(VariableTable.begin(), VariableTable.end(), var_decl->getName()) != VariableTable.end()){
-        SAFE_DELETE(var_decl);
-        SAFE_DELETE(func_stmt);
-        return NULL;
-      }
-
-      func_stmt->addVariableDeclaration(var_decl);
-      VariableTable.push_back(var_decl->getName());
-      var_decl = visitVariableDeclaration();
+  // まず変数宣言をまとめて読む
+  while((var_decl = visitVariableDeclaration())){
+    var_decl->setDeclType(VariableDeclAST::local);
+    // 変数名の重複チェック
+    if(std::find(VariableTable.begin(), VariableTable.end(), var_decl->getName()) != VariableTable.end()){
+      SAFE_DELETE(var_decl);
+      SAFE_DELETE(func_stmt);
+      return NULL;
     }
-
-    if((stmt = visitStatement())){
-      while(stmt){
-        last_stmt = stmt;
-        func_stmt->addStatement(stmt);
-        stmt = visitStatement();
-      }
-    }
-  }
-  else{
-    SAFE_DELETE(func_stmt);
-    Tokens->applyTokenIndex(bkup);
-    return NULL;
+    func_stmt->addVariableDeclaration(var_decl);
+    VariableTable.push_back(var_decl->getName());
   }
 
+  // その後 statement を読む
+  while((stmt = visitStatement())){
+    last_stmt = stmt;
+    func_stmt->addStatement(stmt);
+  }
   // 最後のStatementがjump_statementであるか確認
   if(!last_stmt || (!llvm::isa<JumpStmtAST>(last_stmt) && !llvm::isa<IfStmtAST>(last_stmt))){
     SAFE_DELETE(func_stmt);
@@ -285,8 +342,23 @@ BaseAST *Parser::visitAssignmentExpression(){
   if(Tokens->getCurType() == TOK_IDENTIFIER){
     // 変数宣言されているか確認
     if(std::find(VariableTable.begin(), VariableTable.end(), Tokens->getCurString()) != VariableTable.end()){
-      lhs = new VariableAST(Tokens->getCurString());
+      std::string lhs_name = Tokens->getCurString();
       Tokens->getNextToken();
+      // 次がドットならメンバアクセスを左辺にする（p.x = ...）
+      if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "."){
+        Tokens->getNextToken();
+        if(Tokens->getCurType() == TOK_IDENTIFIER){
+          lhs = new MemberAccessAST(lhs_name, Tokens->getCurString());
+          Tokens->getNextToken();
+        }
+        else{
+          Tokens->applyTokenIndex(bkup);
+          return NULL;
+        }
+      }
+      else{
+        lhs = new VariableAST(lhs_name);
+      }
       BaseAST *rhs;
       if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "="){
         Tokens->getNextToken();
@@ -325,6 +397,19 @@ BaseAST *Parser::visitPrimaryExpression(){
     (std::find(VariableTable.begin(), VariableTable.end(), Tokens->getCurString()) != VariableTable.end())){
     std::string var_name = Tokens->getCurString();
     Tokens->getNextToken();
+    // 次がドットならメンバアクセス（p.x）
+    if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "."){
+      Tokens->getNextToken();
+      if(Tokens->getCurType() == TOK_IDENTIFIER){
+        std::string member_name = Tokens->getCurString();
+        Tokens->getNextToken();
+        return new MemberAccessAST(var_name, member_name);
+      }
+      else{
+        Tokens->applyTokenIndex(bkup);
+        return NULL;
+      }
+    }
     return new VariableAST(var_name);
   }
   else if(Tokens->getCurType() == TOK_DIGIT){
@@ -801,16 +886,25 @@ BaseAST *Parser::visitStatement(){
 
 VariableDeclAST *Parser::visitVariableDeclaration(){
   std::string name;
+  std::string type_name;
 
+  // 型: int または 登録済みの構造体名
   if(Tokens->getCurType() == TOK_INT){
+    type_name = "int";
+    Tokens->getNextToken();
+  }
+  else if(Tokens->getCurType() == TOK_IDENTIFIER &&
+          StructTable.find(Tokens->getCurString()) != StructTable.end()){
+    type_name = Tokens->getCurString();
     Tokens->getNextToken();
   }
   else{
     return NULL;
   }
 
+  // 変数名
   if(Tokens->getCurType() == TOK_IDENTIFIER){
-    name=Tokens->getCurString();
+    name = Tokens->getCurString();
     Tokens->getNextToken();
   }
   else{
@@ -818,16 +912,16 @@ VariableDeclAST *Parser::visitVariableDeclaration(){
     return NULL;
   }
 
+  // ";"
   if(Tokens->getCurString() == ";"){
     Tokens->getNextToken();
-    return new VariableDeclAST(name);
+    return new VariableDeclAST(name, type_name);
   }
   else{
     Tokens->ungetToken(2);
     return NULL;
   }
 }
-
 BaseAST *Parser::visitMultiplicativeExpression(BaseAST *lhs){
   int bkup = Tokens->getCurIndex();
 

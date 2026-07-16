@@ -23,7 +23,8 @@ private:
   std::vector<std::string> VariableTable;
   std::map<std::string, int> PrototypeTable;
   std::map<std::string, int> FunctionTable;
-
+  std::map<std::string, StructDeclAST*> StructTable;
+  
 public:
   Parser(std::string filename);
   ~Parser(){
@@ -39,6 +40,7 @@ private:
  */
   bool visitTranslationUnit();
   bool visitExternalDeclaration(TranslationUnitAST *tunit);
+  StructDeclAST *visitStructDeclaration();
   PrototypeAST *visitFunctionDeclaration();
   FunctionAST *visitFunctionDefinition();
   PrototypeAST *visitPrototype();

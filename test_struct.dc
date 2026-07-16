@@ -1,0 +1,10 @@
+class Point {
+  int x;
+}
+
+int main(){
+  Point p;
+  p.x = 5;
+  return p.x;
+}
+
