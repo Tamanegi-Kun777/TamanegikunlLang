@@ -25,6 +25,7 @@ private:
   std::map<std::string, int> FunctionTable;
   std::map<std::string, StructDeclAST*> StructTable;
   std::map<std::string, std::string> TypeAliasTable;
+  std::map<std::string, int> EnumTable;
   std::vector<std::string> CurrentStructMembers;
   std::string CurrentStructName;
  
@@ -45,6 +46,7 @@ private:
   bool visitExternalDeclaration(TranslationUnitAST *tunit);
   StructDeclAST *visitStructDeclaration();
   bool visitUsingDeclaration();
+  bool visitEnumDeclaration();
   PrototypeAST *visitFunctionDeclaration();
   FunctionAST *visitFunctionDefinition();
   PrototypeAST *visitPrototype();

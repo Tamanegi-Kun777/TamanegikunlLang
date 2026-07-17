@@ -54,6 +54,10 @@ bool Parser::visitExternalDeclaration(TranslationUnitAST *tunit){
   if(visitUsingDeclaration()){
     return true;
   }
+  // enum 宣言を試す
+  if(visitEnumDeclaration()){
+    return true;
+  }
   StructDeclAST *struct_decl = visitStructDeclaration();
   if(struct_decl){
     tunit->addStruct(struct_decl);
@@ -210,6 +214,50 @@ bool Parser::visitUsingDeclaration(){
   }
   // 登録
   TypeAliasTable[alias_name] = real_type;
+  return true;
+}
+bool Parser::visitEnumDeclaration(){
+  int bkup = Tokens->getCurIndex();
+  // "enum"
+  if(Tokens->getCurType() != TOK_ENUM){
+    return false;
+  }
+  Tokens->getNextToken();
+  // enum名（識別子）
+  if(Tokens->getCurType() == TOK_IDENTIFIER){
+    Tokens->getNextToken();   // enum名は使わないが読み飛ばす
+  }
+  else{
+    Tokens->applyTokenIndex(bkup);
+    return false;
+  }
+  // "{"
+  if(!(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "{")){
+    Tokens->applyTokenIndex(bkup);
+    return false;
+  }
+  Tokens->getNextToken();
+  // メンバ（識別子）をカンマ区切りで読む
+  int value = 0;
+  while(Tokens->getCurType() == TOK_IDENTIFIER){
+    std::string member = Tokens->getCurString();
+    EnumTable[member] = value;   // 名前→番号
+    value++;
+    Tokens->getNextToken();
+    // カンマがあれば次へ
+    if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == ","){
+      Tokens->getNextToken();
+    }
+    else{
+      break;
+    }
+  }
+  // "}"
+  if(!(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "}")){
+    Tokens->applyTokenIndex(bkup);
+    return false;
+  }
+  Tokens->getNextToken();
   return true;
 }
 PrototypeAST *Parser::visitFunctionDeclaration(){
@@ -956,7 +1004,7 @@ BaseAST *Parser::visitForStatement(){
         BaseAST *r_init = new BinaryExprAST("=", new VariableAST(loop_var), new NumberAST(0));
         BaseAST *r_cond = new BinaryExprAST("<", new VariableAST(loop_var), new NumberAST(range_max));
         BaseAST *r_update = new BinaryExprAST("=", new VariableAST(loop_var),
-                              new BinaryExprAST("+", new VariableAST(loop_var), new NumberAST(1)));
+        new BinaryExprAST("+", new VariableAST(loop_var), new NumberAST(1)));
         if(!(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "{")){
           Tokens->applyTokenIndex(bkup); return NULL;
         }
