@@ -83,6 +83,9 @@ TokenStream *LexicalAnalysis(std::string input_filename){
         else if(token_str == "using"){
           next_token = new Token(token_str, TOK_USING, line_num);
         }
+        else if(token_str == "enum"){
+          next_token = new Token(token_str, TOK_ENUM, line_num);
+        }
         else{
           next_token = new Token(token_str, TOK_IDENTIFIER, line_num);
         }

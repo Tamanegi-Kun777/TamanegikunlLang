@@ -26,6 +26,7 @@ enum TokenType
   TOK_DOUBLE,
   TOK_USING,
   TOK_STRING,
+  TOK_ENUM,
   TOK_EOF
 };
 
