@@ -128,6 +128,15 @@ index--;
         token_str = std::to_string(char_code);
         next_token = new Token(token_str, TOK_DIGIT, line_num);
       }
+      // String literal "Hello"
+      else if(next_char == '"'){
+        next_char = cur_line.at(index++);   // " の次
+        while(next_char != '"'){            // 閉じ " まで
+          token_str += next_char;
+          next_char = cur_line.at(index++);
+        }
+        next_token = new Token(token_str, TOK_STRING, line_num);
+      }
       //　Division, Comment
       else if(next_char == '/'){
         token_str += next_char;

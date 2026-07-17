@@ -21,6 +21,7 @@ enum TokenType {
     TOK_FLOAT, // FLOAT
     TOK_DOUBLE, // DOUBLE
     TOK_USING, // USING
+    TOK_STRING,
     TOK_EOF // EOF
 };
 

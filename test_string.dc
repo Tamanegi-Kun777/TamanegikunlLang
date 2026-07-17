@@ -1,0 +1,5 @@
+int main(){
+  char s[6];
+  s = "Hello";
+  return s[0];
+}

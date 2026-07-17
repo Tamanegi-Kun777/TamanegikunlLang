@@ -24,7 +24,8 @@ enum AstID
   ForStmtID,
   StructDeclID,
   MemberAccessID,
-  ArrayAccessID
+  ArrayAccessID,
+  StringLiteralID
 };
 // ファイルの、先頭あたりに、追加
 class PrototypeAST;
@@ -339,6 +340,22 @@ public:
   };
   std::string getArrayName(){return ArrayName;};
   BaseAST *getIndex(){return Index;};
+};
+/*
+ *  文字列リテラル "Hello" を表すAST
+ */
+class StringLiteralAST : public BaseAST
+{
+  std::string Str;
+public:
+  StringLiteralAST(const std::string &str)
+    : BaseAST(StringLiteralID), Str(str){};
+  ~StringLiteralAST(){};
+  static inline bool classof(StringLiteralAST const*){return true;};
+  static inline bool classof(BaseAST const* base){
+    return base->getValueID() == StringLiteralID;
+  };
+  std::string getStr(){return Str;};
 };
 /*
  *  変数参照を表すAST

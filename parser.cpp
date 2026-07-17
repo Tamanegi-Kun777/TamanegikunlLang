@@ -569,6 +569,11 @@ BaseAST *Parser::visitPrimaryExpression(){
     Tokens->getNextToken();
     return new FloatNumberAST(val);
   }
+  else if(Tokens->getCurType() == TOK_STRING){
+    std::string str = Tokens->getCurString();
+    Tokens->getNextToken();
+    return new StringLiteralAST(str);
+  }
   else if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "-"){
     /* omit */
   }

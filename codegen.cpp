@@ -429,6 +429,10 @@ llvm::Value *CodeGen::generateBinaryExprssion(BinaryExprAST *bin_expr){
   llvm::Value *rhs_v = NULL;
 
   if(bin_expr->getOp() == "="){
+    // 右辺が文字列リテラルなら、配列に1文字ずつ展開
+    if(llvm::isa<StringLiteralAST>(rhs)){
+      return generateStringAssign(bin_expr);
+    }
     if(llvm::isa<MemberAccessAST>(lhs)){
       lhs_v = generateMemberAddress(llvm::dyn_cast<MemberAccessAST>(lhs));
     }
@@ -541,7 +545,25 @@ llvm::Value *CodeGen::generateBinaryExprssion(BinaryExprAST *bin_expr){
   }
   return NULL;
 }
-
+llvm::Value *CodeGen::generateStringAssign(BinaryExprAST *bin_expr){
+  VariableAST *lhs_var = llvm::dyn_cast<VariableAST>(bin_expr->getLHS());
+  llvm::ValueSymbolTable *vs_table = CurFunc->getValueSymbolTable();
+  llvm::Value *base_ptr = vs_table->lookup(lhs_var->getName());
+  StringLiteralAST *str_ast = llvm::dyn_cast<StringLiteralAST>(bin_expr->getRHS());
+  std::string str = str_ast->getStr();
+  llvm::Type *array_type = base_ptr->getType()->getPointerElementType();
+  llvm::Value *last = NULL;
+  for(int i = 0; i <= (int)str.length(); i++){
+    std::vector<llvm::Value*> indices;
+    indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Context), 0));
+    indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Context), i));
+    llvm::Value *elem_ptr = Builder->CreateInBoundsGEP(array_type, base_ptr, indices, "str_ptr");
+    int char_code = (i < (int)str.length()) ? (int)str[i] : 0;
+    llvm::Value *char_val = llvm::ConstantInt::get(llvm::Type::getInt8Ty(Context), char_code);
+    last = Builder->CreateStore(char_val, elem_ptr);
+  }
+  return last;
+}
 llvm::Value *CodeGen::generateCallExpression(CallExprAST *call_expr){
   std::vector<llvm::Value*> arg_vec;
   BaseAST *arg;
