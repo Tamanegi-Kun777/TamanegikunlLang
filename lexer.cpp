@@ -117,8 +117,16 @@ TokenStream *LexicalAnalysis(std::string input_filename){
           else{
             next_token = new Token(token_str, TOK_DIGIT, line_num);
           }
-          index--;
+index--;
         }
+      }
+      // Character literal 'A'
+      else if(next_char == '\''){
+        next_char = cur_line.at(index++);   // ' の次の文字
+        int char_code = (int)next_char;      // 文字コード
+        next_char = cur_line.at(index++);    // 閉じ '
+        token_str = std::to_string(char_code);
+        next_token = new Token(token_str, TOK_DIGIT, line_num);
       }
       //　Division, Comment
       else if(next_char == '/'){
