@@ -898,6 +898,58 @@ BaseAST *Parser::visitIfStatement(){
   }
   return if_stmt;
 }
+BaseAST *Parser::visitMatchStatement(){
+  int bkup = Tokens->getCurIndex();
+  // "match"
+  if(Tokens->getCurType() != TOK_MATCH){ return NULL; }
+  Tokens->getNextToken();
+  // 対象の変数名
+  std::string target_name;
+  if(Tokens->getCurType() == TOK_IDENTIFIER){
+    target_name = Tokens->getCurString();
+    Tokens->getNextToken();
+  }
+  else{ Tokens->applyTokenIndex(bkup); return NULL; }
+  // "{"
+  if(!(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "{")){
+    Tokens->applyTokenIndex(bkup); return NULL;
+  }
+  Tokens->getNextToken();
+  // アームを読んで、if/else連鎖を組み立てる
+  IfStmtAST *first_if = NULL;   // 最初のif（返す）
+  IfStmtAST *prev_if = NULL;    // 前のif（elseに次を繋ぐ）
+  while(Tokens->getCurType() != TOK_SYMBOL || Tokens->getCurString() != "}"){
+    // パターン（enum名や数値。visitPrimaryExpressionで読む）
+    BaseAST *pattern = visitPrimaryExpression();
+    if(!pattern){ Tokens->applyTokenIndex(bkup); return NULL; }
+    // "=>"
+    if(!(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "=>")){
+      Tokens->applyTokenIndex(bkup); return NULL;
+    }
+    Tokens->getNextToken();
+    // 本体の文（1つ）
+    BaseAST *body = visitStatement();
+    if(!body){ Tokens->applyTokenIndex(bkup); return NULL; }
+    // 条件: target == pattern
+    BaseAST *cond = new BinaryExprAST("==", new VariableAST(target_name), pattern);
+    IfStmtAST *arm_if = new IfStmtAST(cond);
+    arm_if->addThenStmt(body);
+    // 連鎖: 前のifのelseに、このifを入れる
+    if(!first_if){
+      first_if = arm_if;
+    }
+    else{
+      prev_if->addElseStmt(arm_if);
+    }
+    prev_if = arm_if;
+  }
+  // "}"
+  if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "}"){
+    Tokens->getNextToken();
+  }
+  else{ Tokens->applyTokenIndex(bkup); return NULL; }
+  return first_if;
+}
 BaseAST *Parser::visitWhileStatement(){
   DBG("[DEBUG] visitWhileStatement start, curType=%d, curStr=%s\n", Tokens->getCurType(), Tokens->getCurString().c_str());
   int bkup = Tokens->getCurIndex();
@@ -1118,6 +1170,9 @@ BaseAST *Parser::visitStatement(){
     return stmt;
   }
   else if((stmt = visitForStatement())){
+    return stmt;
+  }
+  else if((stmt = visitMatchStatement())){
     return stmt;
   }
   else if((stmt = visitExpressionStatement())){

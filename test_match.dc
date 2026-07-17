@@ -1,10 +1,11 @@
-enum Color { Red, Green }
+enum Color { Red, Green, Blue }
 int main(){
   int c;
-  c = Red;
+  c = Green;
   match c {
     Red => return 1;
     Green => return 2;
+    Blue => return 3;
   }
   return 0;
 }

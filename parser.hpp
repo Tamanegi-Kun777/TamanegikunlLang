@@ -64,6 +64,7 @@ private:
   BaseAST *visitMultiplicativeExpression(BaseAST *lhs);
   BaseAST *visitPostfixExpression();
   BaseAST *visitPrimaryExpression();
+  BaseAST *visitMatchStatement();
 };
 
 #endif
