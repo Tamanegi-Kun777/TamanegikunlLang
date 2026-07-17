@@ -551,7 +551,13 @@ BaseAST *Parser::visitAssignmentExpression(){
 BaseAST *Parser::visitPrimaryExpression(){
   DBG("[DEBUG] visitPrimaryExpression start, curType=%d, curStr=%s\n", Tokens->getCurType(), Tokens->getCurString().c_str());//追加
   int bkup = Tokens->getCurIndex();
-
+  // enum の名前なら番号に置き換える
+  if(Tokens->getCurType() == TOK_IDENTIFIER &&
+     EnumTable.find(Tokens->getCurString()) != EnumTable.end()){
+    int value = EnumTable[Tokens->getCurString()];
+    Tokens->getNextToken();
+    return new NumberAST(value);
+  }
   if(Tokens->getCurType() == TOK_IDENTIFIER &&
     (std::find(VariableTable.begin(), VariableTable.end(), Tokens->getCurString()) != VariableTable.end())){
     std::string var_name = Tokens->getCurString();

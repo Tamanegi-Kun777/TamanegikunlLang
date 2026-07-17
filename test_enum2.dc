@@ -1,0 +1,6 @@
+enum Color { Red, Green, Blue }
+int main(){
+  int c;
+  c = Green;
+  return c;
+}
