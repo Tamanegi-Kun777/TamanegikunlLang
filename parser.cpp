@@ -499,6 +499,7 @@ FunctionStmtAST *Parser::visitFunctionStatement(PrototypeAST *proto){
     vdecl->setDeclType(VariableDeclAST::param);
     func_stmt->addVariableDeclaration(vdecl);
     VariableTable.push_back(vdecl->getName());
+    VariableTypeTable[vdecl->getName()] = vdecl->getTypeName();
   }
 
 VariableDeclAST *var_decl;
@@ -516,6 +517,7 @@ VariableDeclAST *var_decl;
     }
     func_stmt->addVariableDeclaration(var_decl);
     VariableTable.push_back(var_decl->getName());
+    VariableTypeTable[var_decl->getName()] = var_decl->getTypeName();
   }
 
   // その後 statement を読む
@@ -682,6 +684,18 @@ BaseAST *Parser::visitPrimaryExpression(){
       Tokens->applyTokenIndex(ev_bkup);   // { が無い、バリアント値ではない
     }
   }
+
+
+  // enum の名前なら番号に置き換える
+  if(Tokens->getCurType() == TOK_IDENTIFIER &&
+     EnumTable.find(Tokens->getCurString()) != EnumTable.end()){
+    int value = EnumTable[Tokens->getCurString()];
+    Tokens->getNextToken();
+    return new NumberAST(value);
+  }
+
+
+
   if(Tokens->getCurType() == TOK_IDENTIFIER &&
     (std::find(VariableTable.begin(), VariableTable.end(), Tokens->getCurString()) != VariableTable.end())){
     std::string var_name = Tokens->getCurString();
@@ -1039,8 +1053,12 @@ BaseAST *Parser::visitMatchStatement(){
     Tokens->applyTokenIndex(bkup); return NULL;
   }
   Tokens->getNextToken();
+  // 対象変数の型を調べ、データ付きenumかを判定
+  std::string target_type = VariableTypeTable[target_name];
+  bool is_data_enum = (EnumVariants.find(target_type) != EnumVariants.end() &&
+                       !EnumVariants[target_type].empty());
   // アームを読んで、if/else連鎖を組み立てる
-  IfStmtAST *first_if = NULL;   // 最初のif（返す）
+  IfStmtAST *first_if = NULL;
   IfStmtAST *prev_if = NULL;    // 前のif（elseに次を繋ぐ）
   while(Tokens->getCurType() != TOK_SYMBOL || Tokens->getCurString() != "}"){
     // パターン（enum名や数値。visitPrimaryExpressionで読む）
@@ -1054,8 +1072,14 @@ BaseAST *Parser::visitMatchStatement(){
     // 本体の文（1つ）
     BaseAST *body = visitStatement();
     if(!body){ Tokens->applyTokenIndex(bkup); return NULL; }
-    // 条件: target == pattern
-    BaseAST *cond = new BinaryExprAST("==", new VariableAST(target_name), pattern);
+// 条件: データ付きenumなら target.tag == pattern、そうでなければ target == pattern
+    BaseAST *cond;
+    if(is_data_enum){
+      cond = new BinaryExprAST("==", new MemberAccessAST(target_name, "tag"), pattern);
+    }
+    else{
+      cond = new BinaryExprAST("==", new VariableAST(target_name), pattern);
+    }
     IfStmtAST *arm_if = new IfStmtAST(cond);
     arm_if->addThenStmt(body);
     // 連鎖: 前のifのelseに、このifを入れる

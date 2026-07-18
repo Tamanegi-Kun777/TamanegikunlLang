@@ -1,0 +1,13 @@
+enum Shape {
+  Circle { int radius; },
+  Rectangle { int width; int height; }
+}
+int main(){
+  Shape s;
+  s = Rectangle{ 3, 4 };
+  match s {
+    Circle => return 1;
+    Rectangle => return 2;
+  }
+  return 0;
+}

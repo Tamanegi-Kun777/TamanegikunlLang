@@ -21,6 +21,7 @@ private:
   TranslationUnitAST *TU;
 
   std::vector<std::string> VariableTable;
+  std::map<std::string, std::string> VariableTypeTable;
   std::map<std::string, int> PrototypeTable;
   std::map<std::string, int> FunctionTable;
   std::map<std::string, StructDeclAST*> StructTable;

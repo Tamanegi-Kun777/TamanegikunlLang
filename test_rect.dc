@@ -1,0 +1,9 @@
+enum Shape {
+  Circle { int radius; },
+  Rectangle { int width; int height; }
+}
+int main(){
+  Shape s;
+  s = Rectangle{ 3, 4 };
+  return s.tag;
+}
