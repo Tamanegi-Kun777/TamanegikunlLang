@@ -1,0 +1,10 @@
+class Tree {
+  int leaves[8];
+  int getLeaf(){
+    return leaves[5];
+  }
+}
+int main(){
+  Tree t;
+  return t.getLeaf();
+}

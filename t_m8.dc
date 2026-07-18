@@ -1,0 +1,13 @@
+class Tree {
+  int leaves[8];
+  int setLeaf(){
+    int x;
+    leaves[5] = 42;
+    x = leaves[5];
+    return x;
+  }
+}
+int main(){
+  Tree t;
+  return t.setLeaf();
+}

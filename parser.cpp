@@ -608,7 +608,26 @@ BaseAST *Parser::visitAssignmentExpression(){
       // 新規: メンバ変数を this.メンバ の左辺にする（value = ...）
       std::string member_name = Tokens->getCurString();
       Tokens->getNextToken();
-      lhs = new MemberAccessAST("this", member_name);
+      // 次が "[" ならメンバ配列アクセス（leaves[5] = ...）
+      if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "["){
+        Tokens->getNextToken();
+        BaseAST *index = visitAssignmentExpression();
+        if(!index){
+          Tokens->applyTokenIndex(bkup);
+          return NULL;
+        }
+        if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "]"){
+          Tokens->getNextToken();
+          lhs = new MemberArrayAccessAST("this", member_name, index);
+        }
+        else{
+          Tokens->applyTokenIndex(bkup);
+          return NULL;
+        }
+      }
+      else{
+        lhs = new MemberAccessAST("this", member_name);
+      }
       BaseAST *rhs;
       if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "="){
         Tokens->getNextToken();
@@ -752,6 +771,21 @@ BaseAST *Parser::visitPrimaryExpression(){
     // メソッド内でメンバ変数を参照（value → this.value）
     std::string member_name = Tokens->getCurString();
     Tokens->getNextToken();
+    // 次が "[" ならメンバ配列アクセス
+    if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "["){
+      Tokens->getNextToken();
+      BaseAST *index = visitAssignmentExpression();
+      if(!index){
+        Tokens->applyTokenIndex(bkup);
+        return NULL;
+      }
+      if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "]"){
+        Tokens->getNextToken();
+        return new MemberArrayAccessAST("this", member_name, index);
+      }
+      Tokens->applyTokenIndex(bkup);
+      return NULL;
+    }
     return new MemberAccessAST("this", member_name);
   }
   else if(Tokens->getCurType() == TOK_DIGIT){

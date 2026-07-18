@@ -26,7 +26,8 @@ enum AstID
   MemberAccessID,
   ArrayAccessID,
   StringLiteralID,
-  EnumValueID
+  EnumValueID,
+  MemberArrayAccessID
 };
 // ファイルの、先頭あたりに、追加
 class PrototypeAST;
@@ -330,6 +331,27 @@ public:
   std::string getVariableName(){return VariableName;};
   std::string getMemberName(){return MemberName;};
   bool getIsCall(){return IsCall;};
+};
+/*
+ *  構造体メンバの配列アクセス t.leaves[5] を表すAST
+ */
+class MemberArrayAccessAST : public BaseAST
+{
+  std::string VariableName;
+  std::string MemberName;
+  BaseAST *Index;
+public:
+  MemberArrayAccessAST(const std::string &var_name, const std::string &member_name, BaseAST *index)
+    : BaseAST(MemberArrayAccessID), VariableName(var_name), MemberName(member_name), Index(index){};
+  //~MemberArrayAccessAST(){SAFE_DELETE(Index);};
+  ~MemberArrayAccessAST(){};
+  static inline bool classof(MemberArrayAccessAST const*){return true;};
+  static inline bool classof(BaseAST const* base){
+    return base->getValueID() == MemberArrayAccessID;
+  };
+  std::string getVariableName(){return VariableName;};
+  std::string getMemberName(){return MemberName;};
+  BaseAST *getIndex(){return Index;};
 };
 /*
  *  配列要素アクセス(a[3])を表すAST
