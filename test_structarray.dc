@@ -1,0 +1,6 @@
+class Box { int tag; char data[8]; }
+int main(){
+  Box b;
+  b.tag = 5;
+  return b.tag;
+}

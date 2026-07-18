@@ -273,6 +273,7 @@ class StructDeclAST : public BaseAST
   std::string Name;
   std::vector<std::string> MemberNames;
   std::vector<std::string> MemberTypes;
+  std::vector<int> MemberArraySizes;   // 0なら配列でない
   std::vector<FunctionAST*> Methods;
 public:
   StructDeclAST(const std::string &name) : BaseAST(StructDeclID), Name(name){};
@@ -282,11 +283,13 @@ public:
     return base->getValueID() == StructDeclID;
   };
   std::string getName(){return Name;};
-  bool addMember(const std::string &member_name, const std::string &member_type){
+  bool addMember(const std::string &member_name, const std::string &member_type, int array_size = 0){
     MemberNames.push_back(member_name);
     MemberTypes.push_back(member_type);
+    MemberArraySizes.push_back(array_size);
     return true;
   };
+
   int getMemberNum(){return MemberNames.size();};
   std::string getMemberName(int i){
     if(i < MemberNames.size()){ return MemberNames.at(i); }
@@ -295,6 +298,10 @@ public:
   std::string getMemberType(int i){
     if(i < MemberTypes.size()){ return MemberTypes.at(i); }
     else{ return ""; }
+  };
+  int getMemberArraySize(int i){
+    if(i < MemberArraySizes.size()){ return MemberArraySizes.at(i); }
+    else{ return 0; }
   };
   bool addMethod(FunctionAST *method){Methods.push_back(method); return true;};
   int getMethodNum(){return Methods.size();};

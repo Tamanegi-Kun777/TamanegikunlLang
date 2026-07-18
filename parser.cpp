@@ -124,7 +124,7 @@ StructDeclAST *Parser::visitStructDeclaration(){
       if(Tokens->getCurType() == TOK_INT){ member_type = "int"; }
       else if(Tokens->getCurType() == TOK_CHAR){ member_type = "char"; }
       else{ member_type = "double"; }      Tokens->getNextToken();
-      std::string member_name;
+    std::string member_name;
       if(Tokens->getCurType() == TOK_IDENTIFIER){
         member_name = Tokens->getCurString();
         Tokens->getNextToken();
@@ -134,6 +134,28 @@ StructDeclAST *Parser::visitStructDeclaration(){
         Tokens->applyTokenIndex(bkup);
         return NULL;
       }
+      // 配列メンバ: 名前の後に [数] があれば読む
+      int member_array_size = 0;
+      if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "["){
+        Tokens->getNextToken();
+        if(Tokens->getCurType() == TOK_DIGIT){
+          member_array_size = Tokens->getCurNumVal();
+          Tokens->getNextToken();
+        }
+        else{
+          SAFE_DELETE(struct_decl);
+          Tokens->applyTokenIndex(bkup);
+          return NULL;
+        }
+        if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "]"){
+          Tokens->getNextToken();
+        }
+        else{
+          SAFE_DELETE(struct_decl);
+          Tokens->applyTokenIndex(bkup);
+          return NULL;
+        }
+      }
       if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == ";"){
         Tokens->getNextToken();
       }
@@ -142,7 +164,7 @@ StructDeclAST *Parser::visitStructDeclaration(){
         Tokens->applyTokenIndex(bkup);
         return NULL;
       }
-      struct_decl->addMember(member_name, member_type);
+      struct_decl->addMember(member_name, member_type, member_array_size);
       CurrentStructMembers.push_back(member_name);
     }
     else{

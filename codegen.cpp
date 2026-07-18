@@ -72,6 +72,10 @@ void CodeGen::registerStruct(StructDeclAST *struct_decl){
   std::vector<llvm::Type*> member_types;
   for(int i = 0; i < struct_decl->getMemberNum(); i++){
     llvm::Type *member_type = getLLVMType(struct_decl->getMemberType(i));
+    int array_size = struct_decl->getMemberArraySize(i);
+    if(array_size > 0){
+      member_type = llvm::ArrayType::get(member_type, array_size);
+    }
     member_types.push_back(member_type);
   }
   // LLVMのStructTypeを作る（名前付き）
