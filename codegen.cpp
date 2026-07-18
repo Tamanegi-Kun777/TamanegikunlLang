@@ -739,6 +739,13 @@ llvm::Value *CodeGen::generateArrayAddress(ArrayAccessAST *array){
   else if(llvm::isa<BinaryExprAST>(index_ast)){
     index_v = generateBinaryExprssion(llvm::dyn_cast<BinaryExprAST>(index_ast));
   }
+  // ポインタ型なら、ポインタ経由のアクセス
+  llvm::Type *pointee = base_ptr->getType()->getPointerElementType();
+  if(pointee->isPointerTy()){
+    llvm::Value *pval = Builder->CreateLoad(pointee, base_ptr, "ptr_val");
+    llvm::Type *elem = llvm::cast<llvm::PointerType>(pointee)->getPointerElementType();
+    return Builder->CreateInBoundsGEP(elem, pval, index_v, "ptr_elem");
+  }
   // 配列の要素型
   llvm::Type *elem_type = getLLVMType(VariableTypeTable[array->getArrayName()]);
   llvm::Type *array_type = llvm::ArrayType::get(elem_type, 0);
