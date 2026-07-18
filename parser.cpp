@@ -258,12 +258,29 @@ bool Parser::visitEnumDeclaration(){
       break;
     }
   }
-  // "}"
+// "}"
   if(!(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "}")){
     Tokens->applyTokenIndex(bkup);
     return false;
   }
   Tokens->getNextToken();
+  // データ付きenumなら、最大バリアントサイズを計算
+  if(!EnumVariants[enum_name].empty()){
+    int max_size = 0;
+    for(int i = 0; i < (int)EnumVariants[enum_name].size(); i++){
+      StructDeclAST *st = StructTable[EnumVariants[enum_name][i]];
+      int size = 0;
+      for(int j = 0; j < st->getMemberNum(); j++){
+        std::string type = st->getMemberType(j);
+        if(type == "int"){ size += 4; }
+        else if(type == "char"){ size += 1; }
+        else if(type == "double"){ size += 8; }
+        else{ size += 4; }
+      }
+      if(size > max_size){ max_size = size; }
+    }
+    DBG("[DEBUG] enum %s max variant size: %d\n", enum_name.c_str(), max_size);
+  }
   return true;
 }
 PrototypeAST *Parser::visitFunctionDeclaration(){
