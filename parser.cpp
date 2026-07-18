@@ -560,8 +560,28 @@ BaseAST *Parser::visitAssignmentExpression(){
       if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "."){
         Tokens->getNextToken();
         if(Tokens->getCurType() == TOK_IDENTIFIER){
-          lhs = new MemberAccessAST(lhs_name, Tokens->getCurString());
+          std::string member_name = Tokens->getCurString();
           Tokens->getNextToken();
+          // 次が "[" ならメンバ配列アクセス（t.leaves[5] = ...）
+          if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "["){
+            Tokens->getNextToken();
+            BaseAST *index = visitAssignmentExpression();
+            if(!index){
+              Tokens->applyTokenIndex(bkup);
+              return NULL;
+            }
+            if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "]"){
+              Tokens->getNextToken();
+              lhs = new MemberArrayAccessAST(lhs_name, member_name, index);
+            }
+            else{
+              Tokens->applyTokenIndex(bkup);
+              return NULL;
+            }
+          }
+          else{
+            lhs = new MemberAccessAST(lhs_name, member_name);
+          }
         }
         else{
           Tokens->applyTokenIndex(bkup);
@@ -756,6 +776,21 @@ BaseAST *Parser::visitPrimaryExpression(){
             Tokens->applyTokenIndex(bkup);
             return NULL;
           }
+        }
+        // 次が "[" ならメンバ配列アクセス（t.leaves[5]）
+        if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "["){
+          Tokens->getNextToken();
+          BaseAST *index = visitAssignmentExpression();
+          if(!index){
+            Tokens->applyTokenIndex(bkup);
+            return NULL;
+          }
+          if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "]"){
+            Tokens->getNextToken();
+            return new MemberArrayAccessAST(var_name, member_name, index);
+          }
+          Tokens->applyTokenIndex(bkup);
+          return NULL;
         }
         return new MemberAccessAST(var_name, member_name);
       }
