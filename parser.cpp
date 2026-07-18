@@ -298,6 +298,7 @@ int value = 0;
       else{ SAFE_DELETE(variant_decl); Tokens->applyTokenIndex(bkup); return false; }
       // 構造体として登録、バリアントとして記録
       StructTable[member] = variant_decl;
+      tunit->addStruct(variant_decl);
       EnumVariants[enum_name].push_back(member);
       DBG("[DEBUG] enum variant(B): %s -> %s (tag=%d)\n", enum_name.c_str(), member.c_str(), value);
     }

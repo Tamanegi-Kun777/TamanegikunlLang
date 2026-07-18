@@ -68,6 +68,7 @@ bool CodeGen::generateTranslationUnit(TranslationUnitAST &tunit, std::string nam
   return true;
 }
 void CodeGen::registerStruct(StructDeclAST *struct_decl){
+  DBG("[DEBUG] registerStruct: %s (members=%d)\n", struct_decl->getName().c_str(), struct_decl->getMemberNum());
   // メンバの型を集める
   std::vector<llvm::Type*> member_types;
   for(int i = 0; i < struct_decl->getMemberNum(); i++){
@@ -745,5 +746,41 @@ llvm::Value *CodeGen::generateEnumValueAssign(BinaryExprAST *bin_expr){
   llvm::Value *tag_ptr = Builder->CreateInBoundsGEP(shape_type, shape_ptr, indices, "tag_ptr");
   // タグを書き込む
   llvm::Value *tag_val = llvm::ConstantInt::get(llvm::Type::getInt32Ty(Context), tag);
-  return Builder->CreateStore(tag_val, tag_ptr);
+  llvm::Value *last = Builder->CreateStore(tag_val, tag_ptr);
+  // s.data（1番目のメンバ）のアドレス
+  std::vector<llvm::Value*> data_indices;
+  data_indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Context), 0));
+  data_indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Context), 1));
+  llvm::Value *data_ptr = Builder->CreateInBoundsGEP(shape_type, shape_ptr, data_indices, "data_ptr");
+  // バリアント構造体の型を取得
+  llvm::StructType *variant_type = StructTypeTable[ev->getVariantName()];
+  // bitcast: [8 x i8]* → Circle*
+  llvm::Value *variant_ptr = Builder->CreateBitCast(data_ptr, variant_type->getPointerTo(), "variant_ptr");
+  DBG("[DEBUG] enum value assign: variant=%s, tag=%d, valueNum=%d\n", ev->getVariantName().c_str(), tag, ev->getValueNum());
+  // 各値をバリアントのメンバに書き込む
+for(int i = 0; i < ev->getValueNum(); i++){
+    BaseAST *val_ast = ev->getValue(i);
+    llvm::Value *val = NULL;
+    if(llvm::isa<NumberAST>(val_ast)){
+      val = generateNumber(llvm::dyn_cast<NumberAST>(val_ast)->getNumberValue());
+    }
+    else if(llvm::isa<FloatNumberAST>(val_ast)){
+      val = generateFloatNumber(llvm::dyn_cast<FloatNumberAST>(val_ast)->getValue());
+    }
+    else if(llvm::isa<VariableAST>(val_ast)){
+      val = generateVariable(llvm::dyn_cast<VariableAST>(val_ast));
+    }
+    else if(llvm::isa<BinaryExprAST>(val_ast)){
+      val = generateBinaryExprssion(llvm::dyn_cast<BinaryExprAST>(val_ast));
+    }
+    if(!val){ continue; }
+    std::vector<llvm::Value*> mem_indices;
+    mem_indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Context), 0));
+    mem_indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Context), i));
+    llvm::Value *mem_ptr = Builder->CreateInBoundsGEP(variant_type, variant_ptr, mem_indices, "mem_ptr");
+    val = convertType(val, mem_ptr->getType()->getPointerElementType());
+    last = Builder->CreateStore(val, mem_ptr);
+  }
+  return last;
+
 }
