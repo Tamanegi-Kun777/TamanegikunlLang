@@ -48,7 +48,7 @@ private:
   bool visitExternalDeclaration(TranslationUnitAST *tunit);
   StructDeclAST *visitStructDeclaration();
   bool visitUsingDeclaration();
-  bool visitEnumDeclaration();
+  bool visitEnumDeclaration(TranslationUnitAST *tunit);
   PrototypeAST *visitFunctionDeclaration();
   FunctionAST *visitFunctionDefinition();
   PrototypeAST *visitPrototype();

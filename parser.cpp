@@ -55,7 +55,7 @@ bool Parser::visitExternalDeclaration(TranslationUnitAST *tunit){
     return true;
   }
   // enum 宣言を試す
-  if(visitEnumDeclaration()){
+  if(visitEnumDeclaration(tunit)){
     return true;
   }
   StructDeclAST *struct_decl = visitStructDeclaration();
@@ -238,7 +238,7 @@ bool Parser::visitUsingDeclaration(){
   TypeAliasTable[alias_name] = real_type;
   return true;
 }
-bool Parser::visitEnumDeclaration(){
+bool Parser::visitEnumDeclaration(TranslationUnitAST *tunit){
   int bkup = Tokens->getCurIndex();
   // "enum"
   if(Tokens->getCurType() != TOK_ENUM){
@@ -332,6 +332,13 @@ int value = 0;
       if(size > max_size){ max_size = size; }
     }
     DBG("[DEBUG] enum %s max variant size: %d\n", enum_name.c_str(), max_size);
+    // ↓ ここに追加（max_size を計算した後、この if の中）
+    StructDeclAST *enum_struct = new StructDeclAST(enum_name);
+    enum_struct->addMember("tag", "int", 0);
+    enum_struct->addMember("data", "char", max_size);
+    StructTable[enum_name] = enum_struct;
+    tunit->addStruct(enum_struct);
+    DBG("[DEBUG] enum struct created: %s { int tag; char data[%d]; }\n", enum_name.c_str(), max_size);
   }
   return true;
 }
