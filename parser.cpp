@@ -881,7 +881,54 @@ BaseAST *Parser::visitAdditiveExpression(BaseAST *lhs){
       return NULL;
     }
   }
-
+else if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "<<"){
+    Tokens->getNextToken();
+    rhs = visitMultiplicativeExpression(NULL);
+    if(rhs){
+      return visitAdditiveExpression(new BinaryExprAST("<<", lhs, rhs));
+    }
+    else{
+      SAFE_DELETE(lhs);
+      Tokens->applyTokenIndex(bkup);
+      return NULL;
+    }
+  }
+  else if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == ">>"){
+    Tokens->getNextToken();
+    rhs = visitMultiplicativeExpression(NULL);
+    if(rhs){
+      return visitAdditiveExpression(new BinaryExprAST(">>", lhs, rhs));
+    }
+    else{
+      SAFE_DELETE(lhs);
+      Tokens->applyTokenIndex(bkup);
+      return NULL;
+    }
+  }
+  else if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "&"){
+    Tokens->getNextToken();
+    rhs = visitMultiplicativeExpression(NULL);
+    if(rhs){
+      return visitAdditiveExpression(new BinaryExprAST("&", lhs, rhs));
+    }
+    else{
+      SAFE_DELETE(lhs);
+      Tokens->applyTokenIndex(bkup);
+      return NULL;
+    }
+  }
+  else if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "|"){
+    Tokens->getNextToken();
+    rhs = visitMultiplicativeExpression(NULL);
+    if(rhs){
+      return visitAdditiveExpression(new BinaryExprAST("|", lhs, rhs));
+    }
+    else{
+      SAFE_DELETE(lhs);
+      Tokens->applyTokenIndex(bkup);
+      return NULL;
+    }
+  }
   return lhs;
 }
 BaseAST *Parser::visitRelationalExpression(){

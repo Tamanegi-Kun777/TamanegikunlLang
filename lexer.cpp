@@ -177,6 +177,18 @@ index--;
             index++;
             next_token = new Token(token_str, TOK_SYMBOL, line_num);
           }
+          else if(next_char == '<' && index < length && cur_line.at(index) == '<'){
+            token_str += '<';
+            token_str += '<';
+            index++;
+            next_token = new Token(token_str, TOK_SYMBOL, line_num);
+          }
+          else if(next_char == '>' && index < length && cur_line.at(index) == '>'){
+            token_str += '>';
+            token_str += '>';
+            index++;
+            next_token = new Token(token_str, TOK_SYMBOL, line_num);
+          }
           else if(next_char == '!'){
             fprintf(stderr, "unclear token : %c", next_char);
             SAFE_DELETE(tokens);
@@ -190,6 +202,8 @@ index--;
         else if(next_char == '*' ||
           next_char == '+' ||
           next_char == '-' ||
+          next_char == '&' ||
+          next_char == '|' ||
           next_char == ';' ||
           next_char == ',' ||
           next_char == '(' ||

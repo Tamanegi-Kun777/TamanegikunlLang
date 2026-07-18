@@ -526,6 +526,18 @@ llvm::Value *CodeGen::generateBinaryExprssion(BinaryExprAST *bin_expr){
     if(is_float) return Builder->CreateFDiv(lhs_v, rhs_v, "div_tmp");
     return Builder->CreateSDiv(lhs_v, rhs_v, "div_tmp");
   }
+  else if(bin_expr->getOp() == "<<"){
+    return Builder->CreateShl(lhs_v, rhs_v, "shl_tmp");
+  }
+  else if(bin_expr->getOp() == ">>"){
+    return Builder->CreateAShr(lhs_v, rhs_v, "shr_tmp");
+  }
+  else if(bin_expr->getOp() == "&"){
+    return Builder->CreateAnd(lhs_v, rhs_v, "and_tmp");
+  }
+  else if(bin_expr->getOp() == "|"){
+    return Builder->CreateOr(lhs_v, rhs_v, "or_tmp");
+  }
   else if(bin_expr->getOp() == "<"){
     if(is_float) return Builder->CreateFCmpOLT(lhs_v, rhs_v, "cmp_tmp");
     return Builder->CreateICmpSLT(lhs_v, rhs_v, "cmp_tmp");
