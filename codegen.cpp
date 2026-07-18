@@ -668,8 +668,14 @@ llvm::Value *CodeGen::generateJumpStatement(JumpStmtAST *jump_stmt){
     ret_v = generateCallExpression(llvm::dyn_cast<CallExprAST>(expr));
   }
   else if(llvm::isa<MemberAccessAST>(expr)){
-    llvm::Value *addr = generateMemberAddress(llvm::dyn_cast<MemberAccessAST>(expr));
-    ret_v = Builder->CreateLoad(addr->getType()->getPointerElementType(), addr, "member_tmp");
+    MemberAccessAST *member = llvm::dyn_cast<MemberAccessAST>(expr);
+    if(member->getIsCall()){
+      ret_v = generateMethodCall(member);
+    }
+    else{
+      llvm::Value *addr = generateMemberAddress(member);
+      ret_v = Builder->CreateLoad(addr->getType()->getPointerElementType(), addr, "member_tmp");
+    }
   }
   else if(llvm::isa<ArrayAccessAST>(expr)){
     llvm::Value *addr = generateArrayAddress(llvm::dyn_cast<ArrayAccessAST>(expr));
@@ -678,7 +684,7 @@ llvm::Value *CodeGen::generateJumpStatement(JumpStmtAST *jump_stmt){
   DBG("[CG] JumpStmt: exprType binary=%d var=%d num=%d, ret_v=%p\n",
           llvm::isa<BinaryExprAST>(expr), llvm::isa<VariableAST>(expr),
           llvm::isa<NumberAST>(expr), (void*)ret_v);
-  
+  DBG("[CG] JumpStmt: CurFunc=%p\n", (void*)CurFunc);
   ret_v = convertType(ret_v, CurFunc->getReturnType());
   return Builder->CreateRet(ret_v);
 }

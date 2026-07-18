@@ -1,0 +1,8 @@
+class Tree {
+  int leaves[8];
+}
+int main(){
+  Tree t;
+  t.leaves[5] = 42;
+  return t.leaves[5];
+}

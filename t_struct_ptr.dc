@@ -1,0 +1,7 @@
+class Node { int key; int value; }
+int main(){
+  Node* nodes;
+  nodes = malloc(64);
+  nodes[0].key = 42;
+  return nodes[0].key;
+}

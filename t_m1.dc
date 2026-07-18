@@ -1,0 +1,11 @@
+class Tree {
+  int count;
+  int setCount(){
+    count = 42;
+    return count;
+  }
+}
+int main(){
+  Tree t;
+  return t.setCount();
+}
