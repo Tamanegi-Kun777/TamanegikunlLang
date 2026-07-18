@@ -125,6 +125,10 @@ llvm::Value *CodeGen::convertType(llvm::Value *value, llvm::Type *target_type){
   if(src_type == target_type){
     return value;
   }
+  // ポインタ同士なら bitcast
+  if(src_type->isPointerTy() && target_type->isPointerTy()){
+    return Builder->CreateBitCast(value, target_type, "ptr_cast");
+  }
   if(src_type->isIntegerTy() && target_type->isIntegerTy()){
     unsigned src_bits = src_type->getIntegerBitWidth();
     unsigned tgt_bits = target_type->getIntegerBitWidth();
