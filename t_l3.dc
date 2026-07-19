@@ -1,0 +1,18 @@
+int btPathToAddr(int* path, int depth){
+  int addr;
+  int i;
+  addr = 0;
+  for(i = 0; i < depth; i = i + 1){
+    addr = (addr << 1) | path[i];
+  }
+  return addr;
+}
+int btSet(int* leaves, int* path, int depth, int value){
+  int addr;
+  addr = btPathToAddr(path, depth);
+  leaves[addr] = value;
+  return addr;
+}
+int main(){
+  return 0;
+}

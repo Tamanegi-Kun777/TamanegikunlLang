@@ -1,0 +1,68 @@
+/*
+ *  bintree.dc -- 完全二分木ライブラリ
+ *
+ *  葉を配列で保持し、根から辿った経路のビット列を添字とする。
+ *  左を 0、右を 1 とするので、経路 10110 は添字 22 になる。
+ *  内部ノードは実体を持たず、経路の計算だけで位置が決まる。
+ *
+ *  使い方:
+ *    import "bintree.dc";
+ *    int* leaves;
+ *    leaves = btNewLeaves(5);
+ *    btSet(leaves, path, 5, 42);
+ */
+
+/* 深さ depth の木の葉の数を返す (2^depth) */
+int btLeafCount(int depth){
+  return 1 << depth;
+}
+
+/* 深さ depth 分の葉を確保し、0 で初期化して返す */
+int* btNewLeaves(int depth){
+  int* leaves;
+  int n;
+  int i;
+  n = 1 << depth;
+  leaves = malloc(n * sizeof(int));
+  for(i = 0; i < n; i = i + 1){
+    leaves[i] = 0;
+  }
+  return leaves;
+}
+
+/* 経路の配列 (0 か 1 が depth 個) を葉の添字に変換する */
+int btPathToAddr(int* path, int depth){
+  int addr;
+  int i;
+  addr = 0;
+  for(i = 0; i < depth; i = i + 1){
+    addr = (addr << 1) | path[i];
+  }
+  return addr;
+}
+
+/* 添字から、level 段目の分岐 (0 なら左、1 なら右) を取り出す */
+int btAddrToBit(int addr, int depth, int level){
+  return (addr >> (depth - level - 1)) & 1;
+}
+
+/* 経路をたどった先の葉に値を書き込む */
+int btSet(int* leaves, int* path, int depth, int value){
+  int addr;
+  addr = btPathToAddr(path, depth);
+  leaves[addr] = value;
+  return addr;
+}
+
+/* 経路をたどった先の葉の値を返す */
+int btGet(int* leaves, int* path, int depth){
+  int addr;
+  addr = btPathToAddr(path, depth);
+  return leaves[addr];
+}
+
+/* 葉の領域を解放する */
+int btFree(int* leaves){
+  free(leaves);
+  return 0;
+}

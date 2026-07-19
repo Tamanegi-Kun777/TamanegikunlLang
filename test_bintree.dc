@@ -1,0 +1,58 @@
+/*
+ *  test_bintree.dc -- bintree.dc の動作確認
+ *
+ *  深さ5 (葉32個) の木に3つの経路で値を書き込み、
+ *  それぞれ正しい位置に入ったか確認する。
+ *  全部合っていれば 3 を返す。
+ */
+
+import "bintree.dc";
+
+int main(){
+  int* leaves;
+  int* path;
+  int depth;
+  int ok;
+
+  depth = 5;
+  leaves = btNewLeaves(depth);
+  path = malloc(depth * sizeof(int));
+  ok = 0;
+
+  /* 経路 10110 -> 添字 22 */
+  path[0] = 1;
+  path[1] = 0;
+  path[2] = 1;
+  path[3] = 1;
+  path[4] = 0;
+  btSet(leaves, path, depth, 22);
+  if(leaves[22] == 22){
+    ok = ok + 1;
+  }
+
+  /* 経路 00000 -> 添字 0 (左端) */
+  path[0] = 0;
+  path[1] = 0;
+  path[2] = 0;
+  path[3] = 0;
+  path[4] = 0;
+  btSet(leaves, path, depth, 1);
+  if(leaves[0] == 1){
+    ok = ok + 1;
+  }
+
+  /* 経路 11111 -> 添字 31 (右端) */
+  path[0] = 1;
+  path[1] = 1;
+  path[2] = 1;
+  path[3] = 1;
+  path[4] = 1;
+  btSet(leaves, path, depth, 99);
+  if(leaves[31] == 99){
+    ok = ok + 1;
+  }
+
+  btFree(leaves);
+  free(path);
+  return ok;
+}

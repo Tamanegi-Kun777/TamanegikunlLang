@@ -24,14 +24,12 @@ TokenStream *LexicalAnalysis(std::string input_filename){
 
       // skip comment
       if(iscomment){
-        if( (length - index) < 2 || (cur_line.at(index) != '*') || (cur_line.at(index++) != '/')){
-          continue;
-        }
-        else{
+        if(next_char == '*' && index < length && cur_line.at(index) == '/'){
+          index++;
           iscomment = false;
         }
+        continue;
       }
-
       // EOF
       if(next_char == EOF){
         token_str = EOF;

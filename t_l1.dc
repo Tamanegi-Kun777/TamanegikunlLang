@@ -1,0 +1,6 @@
+int btLeafCount(int depth){
+  return 1 << depth;
+}
+int main(){
+  return btLeafCount(5);
+}

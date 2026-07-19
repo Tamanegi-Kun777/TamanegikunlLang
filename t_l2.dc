@@ -1,0 +1,16 @@
+int* btNewLeaves(int depth){
+  int* leaves;
+  int n;
+  int i;
+  n = 1 << depth;
+  leaves = malloc(n * sizeof(int));
+  for(i = 0; i < n; i = i + 1){
+    leaves[i] = 0;
+  }
+  return leaves;
+}
+int main(){
+  int* p;
+  p = btNewLeaves(5);
+  return p[0];
+}

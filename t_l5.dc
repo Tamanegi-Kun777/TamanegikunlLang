@@ -1,0 +1,9 @@
+int btFree(int* leaves){
+  free(leaves);
+  return 0;
+}
+int main(){
+  int* p;
+  p = malloc(40);
+  return btFree(p);
+}

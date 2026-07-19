@@ -1,0 +1,6 @@
+int btAddrToBit(int addr, int depth, int level){
+  return (addr >> (depth - level - 1)) & 1;
+}
+int main(){
+  return btAddrToBit(22, 5, 0);
+}
