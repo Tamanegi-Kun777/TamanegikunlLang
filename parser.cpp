@@ -598,6 +598,26 @@ VariableDeclAST *var_decl;
 
 BaseAST *Parser::visitAssignmentExpression(){
   DBG("[DEBUG] visitAssignmentExpression start, curType=%d, curStr=%s\n", Tokens->getCurType(), Tokens->getCurString().c_str());
+  // *p = ... （参照外しへの代入）
+  if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "*"){
+    int deref_bkup = Tokens->getCurIndex();
+    Tokens->getNextToken();
+    if(Tokens->getCurType() == TOK_IDENTIFIER &&
+       (std::find(VariableTable.begin(), VariableTable.end(), Tokens->getCurString()) != VariableTable.end())){
+      std::string deref_name = Tokens->getCurString();
+      Tokens->getNextToken();
+      if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "="){
+        Tokens->getNextToken();
+        BaseAST *rhs = visitAssignmentExpression();
+        if(!rhs){
+          Tokens->applyTokenIndex(deref_bkup);
+          return NULL;
+        }
+        return new BinaryExprAST("=", new DerefAST(deref_name), rhs);
+      }
+    }
+    Tokens->applyTokenIndex(deref_bkup);
+  }
   int bkup = Tokens->getCurIndex();
 
   BaseAST *lhs;
@@ -919,6 +939,17 @@ BaseAST *Parser::visitPrimaryExpression(){
       std::string var_name = Tokens->getCurString();
       Tokens->getNextToken();
       return new AddressOfAST(var_name);
+    }
+    Tokens->applyTokenIndex(bkup);
+    return NULL;
+  }
+  else if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "*"){
+    Tokens->getNextToken();
+    if(Tokens->getCurType() == TOK_IDENTIFIER &&
+       (std::find(VariableTable.begin(), VariableTable.end(), Tokens->getCurString()) != VariableTable.end())){
+      std::string var_name = Tokens->getCurString();
+      Tokens->getNextToken();
+      return new DerefAST(var_name);
     }
     Tokens->applyTokenIndex(bkup);
     return NULL;

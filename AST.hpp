@@ -32,7 +32,8 @@ enum AstID
   ArrayMemberAccessID,
   BreakStmtID,
   ContinueStmtID,
-  AddressOfID
+  AddressOfID,
+  DerefID
 };
 
 // ファイルの、先頭あたりに、追加
@@ -431,6 +432,22 @@ public:
   static inline bool classof(AddressOfAST const*){return true;};
   static inline bool classof(BaseAST const* base){
     return base->getValueID() == AddressOfID;
+  };
+  std::string getVariableName(){return VariableName;};
+};
+/*
+ *  参照外し *p を表すAST
+ */
+class DerefAST : public BaseAST
+{
+  std::string VariableName;
+public:
+  DerefAST(const std::string &var_name)
+    : BaseAST(DerefID), VariableName(var_name){};
+  ~DerefAST(){};
+  static inline bool classof(DerefAST const*){return true;};
+  static inline bool classof(BaseAST const* base){
+    return base->getValueID() == DerefID;
   };
   std::string getVariableName(){return VariableName;};
 };

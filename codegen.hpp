@@ -76,6 +76,7 @@ private:
   llvm::Value *generateArrayMemberAddress(ArrayMemberAccessAST *array_member);
   llvm::Value *generateSizeof(SizeofAST *sizeof_ast);
   llvm::Value *generateAddressOf(AddressOfAST *addr_of);
+  llvm::Value *generateDeref(DerefAST *deref);
 };
 
 #endif

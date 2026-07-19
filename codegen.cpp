@@ -485,6 +485,9 @@ llvm::Value *CodeGen::generateBinaryExprssion(BinaryExprAST *bin_expr){
     else if(llvm::isa<ArrayMemberAccessAST>(lhs)){
       lhs_v = generateArrayMemberAddress(llvm::dyn_cast<ArrayMemberAccessAST>(lhs));
     }
+    else if(llvm::isa<DerefAST>(lhs)){
+      lhs_v = generateDeref(llvm::dyn_cast<DerefAST>(lhs));
+    }
     else{
       VariableAST *lhs_var = llvm::dyn_cast<VariableAST>(lhs);
       llvm::ValueSymbolTable *vs_table = CurFunc->getValueSymbolTable();
@@ -520,6 +523,10 @@ llvm::Value *CodeGen::generateBinaryExprssion(BinaryExprAST *bin_expr){
     else if(llvm::isa<ArrayMemberAccessAST>(lhs)){
       llvm::Value *addr = generateArrayMemberAddress(llvm::dyn_cast<ArrayMemberAccessAST>(lhs));
       lhs_v = Builder->CreateLoad(addr->getType()->getPointerElementType(), addr, "arr_member_tmp");
+    }
+    else if(llvm::isa<DerefAST>(lhs)){
+      llvm::Value *deref_addr = generateDeref(llvm::dyn_cast<DerefAST>(lhs));
+      lhs_v = Builder->CreateLoad(deref_addr->getType()->getPointerElementType(), deref_addr, "deref_tmp");
     }
     else if(llvm::isa<SizeofAST>(lhs)){
       lhs_v = generateSizeof(llvm::dyn_cast<SizeofAST>(lhs));
@@ -562,6 +569,10 @@ llvm::Value *CodeGen::generateBinaryExprssion(BinaryExprAST *bin_expr){
   }
   else if(llvm::isa<AddressOfAST>(rhs)){
     rhs_v = generateAddressOf(llvm::dyn_cast<AddressOfAST>(rhs));
+  }
+  else if(llvm::isa<DerefAST>(rhs)){
+    llvm::Value *deref_addr = generateDeref(llvm::dyn_cast<DerefAST>(rhs));
+    rhs_v = Builder->CreateLoad(deref_addr->getType()->getPointerElementType(), deref_addr, "deref_tmp");
   }
   // double が絡む演算のため型を揃える（代入以外で使う）
   bool is_float = (lhs_v && lhs_v->getType()->isDoubleTy()) || (rhs_v && rhs_v->getType()->isDoubleTy());
@@ -746,6 +757,10 @@ llvm::Value *CodeGen::generateJumpStatement(JumpStmtAST *jump_stmt){
   }
   else if(llvm::isa<AddressOfAST>(expr)){
     ret_v = generateAddressOf(llvm::dyn_cast<AddressOfAST>(expr));
+  }
+  else if(llvm::isa<DerefAST>(expr)){
+    llvm::Value *deref_addr = generateDeref(llvm::dyn_cast<DerefAST>(expr));
+    ret_v = Builder->CreateLoad(deref_addr->getType()->getPointerElementType(), deref_addr, "deref_tmp");
   }
   else if(llvm::isa<ArrayMemberAccessAST>(expr)){
     llvm::Value *addr = generateArrayMemberAddress(llvm::dyn_cast<ArrayMemberAccessAST>(expr));
@@ -1030,4 +1045,14 @@ llvm::Value *CodeGen::generateContinue(){
 llvm::Value *CodeGen::generateAddressOf(AddressOfAST *addr_of){
   llvm::ValueSymbolTable *vs_table = CurFunc->getValueSymbolTable();
   return vs_table->lookup(addr_of->getVariableName());
+}
+llvm::Value *CodeGen::generateDeref(DerefAST *deref){
+  llvm::ValueSymbolTable *vs_table = CurFunc->getValueSymbolTable();
+  llvm::Value *var_addr = vs_table->lookup(deref->getVariableName());
+  if(!var_addr){
+    return NULL;
+  }
+  // 変数（ポインタ）の値をロードすると、それが指す先のアドレスになる
+  llvm::Type *pointee = var_addr->getType()->getPointerElementType();
+  return Builder->CreateLoad(pointee, var_addr, "deref_addr");
 }
