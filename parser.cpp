@@ -833,10 +833,58 @@ BaseAST *Parser::visitPrimaryExpression(){
     Tokens->getNextToken();
     return new FloatNumberAST(val);
   }
-else if(Tokens->getCurType() == TOK_STRING){
+  else if(Tokens->getCurType() == TOK_STRING){
     std::string str = Tokens->getCurString();
     Tokens->getNextToken();
     return new StringLiteralAST(str);
+  }
+  else if(Tokens->getCurType() == TOK_SIZEOF){
+    Tokens->getNextToken();
+    if(!(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "(")){
+      Tokens->applyTokenIndex(bkup);
+      return NULL;
+    }
+    Tokens->getNextToken();
+    std::string type_name;
+    if(Tokens->getCurType() == TOK_INT){
+      type_name = "int";
+      Tokens->getNextToken();
+    }
+    else if(Tokens->getCurType() == TOK_CHAR){
+      type_name = "char";
+      Tokens->getNextToken();
+    }
+    else if(Tokens->getCurType() == TOK_DOUBLE){
+      type_name = "double";
+      Tokens->getNextToken();
+    }
+    else{
+      Tokens->applyTokenIndex(bkup);
+      return NULL;
+    }
+    while(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "*"){
+      type_name = type_name + "*";
+      Tokens->getNextToken();
+    }
+    if(!(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == ")")){
+      Tokens->applyTokenIndex(bkup);
+      return NULL;
+    }
+    Tokens->getNextToken();
+    int size = 4;
+    if(type_name.length() > 0 && type_name.at(type_name.length() - 1) == '*'){
+      size = 8;
+    }
+    else if(type_name == "int"){
+      size = 4;
+    }
+    else if(type_name == "char"){
+      size = 1;
+    }
+    else if(type_name == "double"){
+      size = 8;
+    }
+    return new NumberAST(size);
   }
   else if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "("){
     Tokens->getNextToken();

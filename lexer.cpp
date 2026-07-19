@@ -89,6 +89,9 @@ TokenStream *LexicalAnalysis(std::string input_filename){
         else if(token_str == "match"){
           next_token = new Token(token_str, TOK_MATCH, line_num);
         }
+        else if(token_str == "sizeof"){
+          next_token = new Token(token_str, TOK_SIZEOF, line_num);
+        }
         else{
           next_token = new Token(token_str, TOK_IDENTIFIER, line_num);
         }
