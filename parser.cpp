@@ -912,6 +912,17 @@ BaseAST *Parser::visitPrimaryExpression(){
     Tokens->getNextToken();
     return new StringLiteralAST(str);
   }
+  else if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "&"){
+    Tokens->getNextToken();
+    if(Tokens->getCurType() == TOK_IDENTIFIER &&
+       (std::find(VariableTable.begin(), VariableTable.end(), Tokens->getCurString()) != VariableTable.end())){
+      std::string var_name = Tokens->getCurString();
+      Tokens->getNextToken();
+      return new AddressOfAST(var_name);
+    }
+    Tokens->applyTokenIndex(bkup);
+    return NULL;
+  }
   else if(Tokens->getCurType() == TOK_SIZEOF){
     Tokens->getNextToken();
     if(!(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "(")){

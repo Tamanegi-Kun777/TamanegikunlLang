@@ -31,8 +31,10 @@ enum AstID
   SizeofID,
   ArrayMemberAccessID,
   BreakStmtID,
-  ContinueStmtID
+  ContinueStmtID,
+  AddressOfID
 };
+
 // ファイルの、先頭あたりに、追加
 class PrototypeAST;
 class FunctionAST;
@@ -415,6 +417,22 @@ public:
     return base->getValueID() == SizeofID;
   };
   std::string getTypeName(){return TypeName;};
+};
+/*
+ *  アドレス参照（&aなど）を表すAST
+ */
+class AddressOfAST : public BaseAST
+{
+  std::string VariableName;
+public:
+  AddressOfAST(const std::string &var_name)
+    : BaseAST(AddressOfID), VariableName(var_name){};
+  ~AddressOfAST(){};
+  static inline bool classof(AddressOfAST const*){return true;};
+  static inline bool classof(BaseAST const* base){
+    return base->getValueID() == AddressOfID;
+  };
+  std::string getVariableName(){return VariableName;};
 };
 /*
  *  配列要素アクセス(a[3])を表すAST

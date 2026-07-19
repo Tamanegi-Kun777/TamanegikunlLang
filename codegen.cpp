@@ -560,6 +560,9 @@ llvm::Value *CodeGen::generateBinaryExprssion(BinaryExprAST *bin_expr){
   else if(llvm::isa<SizeofAST>(rhs)){
     rhs_v = generateSizeof(llvm::dyn_cast<SizeofAST>(rhs));
   }
+  else if(llvm::isa<AddressOfAST>(rhs)){
+    rhs_v = generateAddressOf(llvm::dyn_cast<AddressOfAST>(rhs));
+  }
   // double が絡む演算のため型を揃える（代入以外で使う）
   bool is_float = (lhs_v && lhs_v->getType()->isDoubleTy()) || (rhs_v && rhs_v->getType()->isDoubleTy());
   if(is_float && bin_expr->getOp() != "="){
@@ -680,6 +683,9 @@ llvm::Value *CodeGen::generateCallExpression(CallExprAST *call_expr){
     else if(llvm::isa<SizeofAST>(arg)){
       arg_v = generateSizeof(llvm::dyn_cast<SizeofAST>(arg));
     }
+    else if(llvm::isa<AddressOfAST>(arg)){
+      arg_v = generateAddressOf(llvm::dyn_cast<AddressOfAST>(arg));
+    }
     // 引数を関数の期待する型に変換
     llvm::Function *callee = Mod->getFunction(call_expr->getCallee());
     if(callee && i < (int)callee->arg_size()){
@@ -737,6 +743,9 @@ llvm::Value *CodeGen::generateJumpStatement(JumpStmtAST *jump_stmt){
   }
   else if(llvm::isa<SizeofAST>(expr)){
     ret_v = generateSizeof(llvm::dyn_cast<SizeofAST>(expr));
+  }
+  else if(llvm::isa<AddressOfAST>(expr)){
+    ret_v = generateAddressOf(llvm::dyn_cast<AddressOfAST>(expr));
   }
   else if(llvm::isa<ArrayMemberAccessAST>(expr)){
     llvm::Value *addr = generateArrayMemberAddress(llvm::dyn_cast<ArrayMemberAccessAST>(expr));
@@ -1017,4 +1026,8 @@ llvm::Value *CodeGen::generateContinue(){
     return NULL;
   }
   return Builder->CreateBr(ContinueTargets.back());
+}
+llvm::Value *CodeGen::generateAddressOf(AddressOfAST *addr_of){
+  llvm::ValueSymbolTable *vs_table = CurFunc->getValueSymbolTable();
+  return vs_table->lookup(addr_of->getVariableName());
 }
