@@ -1,0 +1,10 @@
+import "tree_lib.dc";
+import "tree_lib.dc";
+
+int main(){
+  int* path;
+  path = malloc(2 * sizeof(int));
+  path[0] = 1;
+  path[1] = 1;
+  return pathToAddr(path, 2);
+}

@@ -1,0 +1,10 @@
+import "tree_types.dc";
+
+int main(){
+  Tree t;
+  t.depth = 5;
+  t.size = 1 << t.depth;
+  t.leaves = malloc(t.size * sizeof(int));
+  t.leaves[22] = 42;
+  return t.leaves[22];
+}
