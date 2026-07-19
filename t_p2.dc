@@ -1,0 +1,9 @@
+class Tree {
+  int* leaves;
+  int depth;
+}
+int main(){
+  Tree t;
+  t.leaves = malloc(8 * sizeof(int));
+  return 0;
+}

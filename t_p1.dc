@@ -1,0 +1,9 @@
+class Tree {
+  int* leaves;
+  int depth;
+}
+int main(){
+  Tree t;
+  t.depth = 3;
+  return t.depth;
+}

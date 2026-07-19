@@ -124,10 +124,16 @@ StructDeclAST *Parser::visitStructDeclaration(){
     // メンバ変数(int/char 名前 ;)を試す
     if(Tokens->getCurType() == TOK_INT || Tokens->getCurType() == TOK_CHAR || Tokens->getCurType() == TOK_DOUBLE){
       std::string member_type;
-      if(Tokens->getCurType() == TOK_INT){ member_type = "int"; }
+if(Tokens->getCurType() == TOK_INT){ member_type = "int"; }
       else if(Tokens->getCurType() == TOK_CHAR){ member_type = "char"; }
-      else{ member_type = "double"; }      Tokens->getNextToken();
-    std::string member_name;
+      else{ member_type = "double"; }
+      Tokens->getNextToken();
+      // ポインタ: 型の後に * があれば型名に付ける
+      while(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "*"){
+        member_type = member_type + "*";
+        Tokens->getNextToken();
+      }
+      std::string member_name;
       if(Tokens->getCurType() == TOK_IDENTIFIER){
         member_name = Tokens->getCurString();
         Tokens->getNextToken();

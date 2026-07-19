@@ -898,9 +898,16 @@ llvm::Value *CodeGen::generateMemberArrayAddress(MemberArrayAccessAST *member_ar
   else if(llvm::isa<BinaryExprAST>(index_ast)){
     index_v = generateBinaryExprssion(llvm::dyn_cast<BinaryExprAST>(index_ast));
   }
-  else if(llvm::isa<MemberAccessAST>(index_ast)){
+else if(llvm::isa<MemberAccessAST>(index_ast)){
     llvm::Value *addr = generateMemberAddress(llvm::dyn_cast<MemberAccessAST>(index_ast));
     index_v = Builder->CreateLoad(addr->getType()->getPointerElementType(), addr, "idx_tmp");
+  }
+  // メンバがポインタ型なら、ポインタ経由のアクセス
+  llvm::Type *pointee = array_ptr->getType()->getPointerElementType();
+  if(pointee->isPointerTy()){
+    llvm::Value *pval = Builder->CreateLoad(pointee, array_ptr, "member_ptr_val");
+    llvm::Type *elem = llvm::cast<llvm::PointerType>(pointee)->getPointerElementType();
+    return Builder->CreateInBoundsGEP(elem, pval, index_v, "member_ptr_elem");
   }
   // 配列要素のアドレス: {0, index}
   std::vector<llvm::Value*> indices;
