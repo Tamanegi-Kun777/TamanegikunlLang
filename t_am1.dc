@@ -1,0 +1,6 @@
+class Node { int key; int value; }
+int main(){
+  Node nodes[8];
+  nodes[3].key = 10;
+  return nodes[3].key;
+}

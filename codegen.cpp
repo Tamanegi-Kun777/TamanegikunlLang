@@ -284,6 +284,12 @@ llvm::Value *CodeGen::generateStatement(BaseAST *stmt){
   else if(llvm::isa<MemberAccessAST>(stmt)){
     return generateMethodCall(llvm::dyn_cast<MemberAccessAST>(stmt));
   }
+  else if(llvm::isa<BreakStmtAST>(stmt)){
+    return generateBreak();
+  }
+  else if(llvm::isa<ContinueStmtAST>(stmt)){
+    return generateContinue();
+  }
   else{
     return NULL;
   }
@@ -363,10 +369,8 @@ llvm::Value *CodeGen::generateWhileStatement(WhileStmtAST *while_stmt){
   llvm::BasicBlock *cond_bb = llvm::BasicBlock::Create(Context, "cond", CurFunc);
   llvm::BasicBlock *body_bb = llvm::BasicBlock::Create(Context, "body", CurFunc);
   llvm::BasicBlock *after_bb = llvm::BasicBlock::Create(Context, "after", CurFunc);
-
   // entryから条件チェックへ無条件ジャンプ
   Builder->CreateBr(cond_bb);
-
   // condブロック: 条件を評価して分岐
   Builder->SetInsertPoint(cond_bb);
   BaseAST *cond = while_stmt->getCondition();
@@ -385,21 +389,22 @@ llvm::Value *CodeGen::generateWhileStatement(WhileStmtAST *while_stmt){
   }
   // 条件が真ならbody、偽ならafter
   Builder->CreateCondBr(cond_v, body_bb, after_bb);
-
   // bodyブロック: 本体を生成
   Builder->SetInsertPoint(body_bb);
+  BreakTargets.push_back(after_bb);
+  ContinueTargets.push_back(cond_bb);
   BaseAST *stmt;
   for(int i = 0; (stmt = while_stmt->getBodyStmt(i)); i++){
     generateStatement(stmt);
   }
-  // bodyが終端を持っていなければ、condへ戻る（ループ）
+  BreakTargets.pop_back();
+  ContinueTargets.pop_back();
+  // bodyが終端を持っていなければcondへ戻る
   if(!Builder->GetInsertBlock()->getTerminator()){
     Builder->CreateBr(cond_bb);
   }
-
   // 以降の命令はafterブロックに積む
   Builder->SetInsertPoint(after_bb);
-
   return after_bb;
 }
 llvm::Value *CodeGen::generateForStatement(ForStmtAST *for_stmt){
@@ -409,6 +414,7 @@ llvm::Value *CodeGen::generateForStatement(ForStmtAST *for_stmt){
   // 3つのブロックを作る
   llvm::BasicBlock *cond_bb = llvm::BasicBlock::Create(Context, "for_cond", CurFunc);
   llvm::BasicBlock *body_bb = llvm::BasicBlock::Create(Context, "for_body", CurFunc);
+  llvm::BasicBlock *inc_bb = llvm::BasicBlock::Create(Context, "for_inc", CurFunc);
   llvm::BasicBlock *after_bb = llvm::BasicBlock::Create(Context, "for_after", CurFunc);
 
   // condへ無条件ジャンプ
@@ -432,21 +438,26 @@ llvm::Value *CodeGen::generateForStatement(ForStmtAST *for_stmt){
   }
   Builder->CreateCondBr(cond_v, body_bb, after_bb);
 
-  // bodyブロック: 本体を生成し、その後updateを実行
+  // bodyブロック: 本体を生成
   Builder->SetInsertPoint(body_bb);
+  BreakTargets.push_back(after_bb);
+  ContinueTargets.push_back(inc_bb);
   BaseAST *stmt;
   for(int i = 0; (stmt = for_stmt->getBodyStmt(i)); i++){
     generateStatement(stmt);
   }
-  // bodyが終端を持っていなければ、updateを実行してcondへ戻る
+  BreakTargets.pop_back();
+  ContinueTargets.pop_back();
+  // bodyが終端を持っていなければincブロックへ
   if(!Builder->GetInsertBlock()->getTerminator()){
-    generateStatement(for_stmt->getUpdate());
-    Builder->CreateBr(cond_bb);
+    Builder->CreateBr(inc_bb);
   }
-
+  // incブロック: updateを実行してcondへ戻る
+  Builder->SetInsertPoint(inc_bb);
+  generateStatement(for_stmt->getUpdate());
+  Builder->CreateBr(cond_bb);
   // 以降の命令はafterブロックに積む
   Builder->SetInsertPoint(after_bb);
-
   return after_bb;
 }
 llvm::Value *CodeGen::generateBinaryExprssion(BinaryExprAST *bin_expr){
@@ -470,6 +481,9 @@ llvm::Value *CodeGen::generateBinaryExprssion(BinaryExprAST *bin_expr){
     }
     else if(llvm::isa<MemberArrayAccessAST>(lhs)){
       lhs_v = generateMemberArrayAddress(llvm::dyn_cast<MemberArrayAccessAST>(lhs));
+    }
+    else if(llvm::isa<ArrayMemberAccessAST>(lhs)){
+      lhs_v = generateArrayMemberAddress(llvm::dyn_cast<ArrayMemberAccessAST>(lhs));
     }
     else{
       VariableAST *lhs_var = llvm::dyn_cast<VariableAST>(lhs);
@@ -503,6 +517,10 @@ llvm::Value *CodeGen::generateBinaryExprssion(BinaryExprAST *bin_expr){
       llvm::Value *addr = generateMemberArrayAddress(llvm::dyn_cast<MemberArrayAccessAST>(lhs));
       lhs_v = Builder->CreateLoad(addr->getType()->getPointerElementType(), addr, "member_array_tmp");
     }
+    else if(llvm::isa<ArrayMemberAccessAST>(lhs)){
+      llvm::Value *addr = generateArrayMemberAddress(llvm::dyn_cast<ArrayMemberAccessAST>(lhs));
+      lhs_v = Builder->CreateLoad(addr->getType()->getPointerElementType(), addr, "arr_member_tmp");
+    }
     else if(llvm::isa<SizeofAST>(lhs)){
       lhs_v = generateSizeof(llvm::dyn_cast<SizeofAST>(lhs));
     }
@@ -534,6 +552,10 @@ llvm::Value *CodeGen::generateBinaryExprssion(BinaryExprAST *bin_expr){
   else if(llvm::isa<MemberArrayAccessAST>(rhs)){
     llvm::Value *addr = generateMemberArrayAddress(llvm::dyn_cast<MemberArrayAccessAST>(rhs));
     rhs_v = Builder->CreateLoad(addr->getType()->getPointerElementType(), addr, "member_array_tmp");
+  }
+  else if(llvm::isa<ArrayMemberAccessAST>(rhs)){
+    llvm::Value *addr = generateArrayMemberAddress(llvm::dyn_cast<ArrayMemberAccessAST>(rhs));
+    rhs_v = Builder->CreateLoad(addr->getType()->getPointerElementType(), addr, "arr_member_tmp");
   }
   else if(llvm::isa<SizeofAST>(rhs)){
     rhs_v = generateSizeof(llvm::dyn_cast<SizeofAST>(rhs));
@@ -706,8 +728,16 @@ llvm::Value *CodeGen::generateJumpStatement(JumpStmtAST *jump_stmt){
     DBG("[CG] JumpStmt memberarray: addr=%p\n", (void*)addr);
     ret_v = Builder->CreateLoad(addr->getType()->getPointerElementType(), addr, "member_array_tmp");
   }
+  else if(llvm::isa<ArrayMemberAccessAST>(expr)){
+    llvm::Value *addr = generateArrayMemberAddress(llvm::dyn_cast<ArrayMemberAccessAST>(expr));
+    ret_v = Builder->CreateLoad(addr->getType()->getPointerElementType(), addr, "arr_member_tmp");
+  }
   else if(llvm::isa<SizeofAST>(expr)){
     ret_v = generateSizeof(llvm::dyn_cast<SizeofAST>(expr));
+  }
+  else if(llvm::isa<ArrayMemberAccessAST>(expr)){
+    llvm::Value *addr = generateArrayMemberAddress(llvm::dyn_cast<ArrayMemberAccessAST>(expr));
+    ret_v = Builder->CreateLoad(addr->getType()->getPointerElementType(), addr, "arr_member_tmp");
   }
   DBG("[CG] JumpStmt: exprType binary=%d var=%d num=%d, ret_v=%p\n",
           llvm::isa<BinaryExprAST>(expr), llvm::isa<VariableAST>(expr),
@@ -919,4 +949,69 @@ llvm::Value *CodeGen::generateSizeof(SizeofAST *sizeof_ast){
   llvm::Type *type = getLLVMType(sizeof_ast->getTypeName());
   uint64_t size = Mod->getDataLayout().getTypeAllocSize(type);
   return llvm::ConstantInt::get(llvm::Type::getInt32Ty(Context), size);
+}
+llvm::Value *CodeGen::generateArrayMemberAddress(ArrayMemberAccessAST *array_member){
+  llvm::ValueSymbolTable *vs_table = CurFunc->getValueSymbolTable();
+  llvm::Value *base_ptr = vs_table->lookup(array_member->getArrayName());
+  BaseAST *index_ast = array_member->getIndex();
+  llvm::Value *index_v = NULL;
+  if(llvm::isa<NumberAST>(index_ast)){
+    index_v = generateNumber(llvm::dyn_cast<NumberAST>(index_ast)->getNumberValue());
+  }
+  else if(llvm::isa<VariableAST>(index_ast)){
+    index_v = generateVariable(llvm::dyn_cast<VariableAST>(index_ast));
+  }
+  else if(llvm::isa<BinaryExprAST>(index_ast)){
+    index_v = generateBinaryExprssion(llvm::dyn_cast<BinaryExprAST>(index_ast));
+  }
+  else if(llvm::isa<MemberAccessAST>(index_ast)){
+    llvm::Value *addr = generateMemberAddress(llvm::dyn_cast<MemberAccessAST>(index_ast));
+    index_v = Builder->CreateLoad(addr->getType()->getPointerElementType(), addr, "idx_tmp");
+  }
+  llvm::Value *elem_ptr = NULL;
+  llvm::Type *pointee = base_ptr->getType()->getPointerElementType();
+  if(pointee->isPointerTy()){
+    llvm::Value *pval = Builder->CreateLoad(pointee, base_ptr, "arr_ptr_val");
+    llvm::Type *elem = llvm::cast<llvm::PointerType>(pointee)->getPointerElementType();
+    elem_ptr = Builder->CreateInBoundsGEP(elem, pval, index_v, "arr_elem");
+  }
+  else{
+    std::vector<llvm::Value*> indices;
+    indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Context), 0));
+    indices.push_back(index_v);
+    elem_ptr = Builder->CreateInBoundsGEP(pointee, base_ptr, indices, "arr_elem");
+  }
+  std::string type_name = VariableTypeTable[array_member->getArrayName()];
+  if(type_name.length() > 0 && type_name.at(type_name.length() - 1) == '*'){
+    type_name = type_name.substr(0, type_name.length() - 1);
+  }
+  StructDeclAST *struct_decl = StructInfoTable[type_name];
+  llvm::StructType *struct_type = StructTypeTable[type_name];
+  if(!struct_decl || !struct_type){
+    return NULL;
+  }
+  int member_index = -1;
+  for(int i = 0; i < struct_decl->getMemberNum(); i++){
+    if(struct_decl->getMemberName(i) == array_member->getMemberName()){
+      member_index = i;
+      break;
+    }
+  }
+  if(member_index < 0){
+    return NULL;
+  }
+  return Builder->CreateStructGEP(struct_type, elem_ptr, member_index, "arr_member_ptr");
+}
+llvm::Value *CodeGen::generateBreak(){
+  if(BreakTargets.empty()){
+    return NULL;
+  }
+  return Builder->CreateBr(BreakTargets.back());
+}
+
+llvm::Value *CodeGen::generateContinue(){
+  if(ContinueTargets.empty()){
+    return NULL;
+  }
+  return Builder->CreateBr(ContinueTargets.back());
 }

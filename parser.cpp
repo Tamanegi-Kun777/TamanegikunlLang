@@ -602,9 +602,23 @@ BaseAST *Parser::visitAssignmentExpression(){
           Tokens->applyTokenIndex(bkup);
           return NULL;
         }
-        if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "]"){
-          Tokens->getNextToken();
-          lhs = new ArrayAccessAST(lhs_name, index);
+          if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "]"){
+            Tokens->getNextToken();
+          if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "."){
+            Tokens->getNextToken();
+            if(Tokens->getCurType() == TOK_IDENTIFIER){
+              std::string member_name = Tokens->getCurString();
+              Tokens->getNextToken();
+              lhs = new ArrayMemberAccessAST(lhs_name, index, member_name);
+            }
+            else{
+              Tokens->applyTokenIndex(bkup);
+              return NULL;
+            }
+          }
+          else{
+            lhs = new ArrayAccessAST(lhs_name, index);
+          }
         }
         else{
           Tokens->applyTokenIndex(bkup);
@@ -758,6 +772,16 @@ BaseAST *Parser::visitPrimaryExpression(){
       }
       if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "]"){
         Tokens->getNextToken();
+        if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "."){
+          Tokens->getNextToken();
+          if(Tokens->getCurType() == TOK_IDENTIFIER){
+            std::string member_name = Tokens->getCurString();
+            Tokens->getNextToken();
+            return new ArrayMemberAccessAST(var_name, index, member_name);
+          }
+          Tokens->applyTokenIndex(bkup);
+          return NULL;
+        }
         return new ArrayAccessAST(var_name, index);
       }
       else{
@@ -1490,6 +1514,24 @@ BaseAST *Parser::visitForStatement(){
 BaseAST *Parser::visitStatement(){
   DBG("[DEBUG] visitStatement start, curType=%d, curStr=%s\n", Tokens->getCurType(), Tokens->getCurString().c_str());//追加
   BaseAST *stmt = NULL;
+  // break;
+  if(Tokens->getCurType() == TOK_BREAK){
+    Tokens->getNextToken();
+    if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == ";"){
+      Tokens->getNextToken();
+      return new BreakStmtAST();
+    }
+    return NULL;
+  }
+  // continue;
+  if(Tokens->getCurType() == TOK_CONTINUE){
+    Tokens->getNextToken();
+    if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == ";"){
+      Tokens->getNextToken();
+      return new ContinueStmtAST();
+    }
+    return NULL;
+  }
   if((stmt = visitIfStatement())){
     return stmt;
   }

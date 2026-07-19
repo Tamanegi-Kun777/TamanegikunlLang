@@ -28,7 +28,10 @@ enum AstID
   StringLiteralID,
   EnumValueID,
   MemberArrayAccessID,
-  SizeofID
+  SizeofID,
+  ArrayMemberAccessID,
+  BreakStmtID,
+  ContinueStmtID
 };
 // ファイルの、先頭あたりに、追加
 class PrototypeAST;
@@ -353,6 +356,49 @@ public:
   std::string getVariableName(){return VariableName;};
   std::string getMemberName(){return MemberName;};
   BaseAST *getIndex(){return Index;};
+};
+class ArrayMemberAccessAST : public BaseAST
+{
+  std::string ArrayName;
+  BaseAST *Index;
+  std::string MemberName;
+public:
+  ArrayMemberAccessAST(const std::string &array_name, BaseAST *index, const std::string &member_name)
+    : BaseAST(ArrayMemberAccessID), ArrayName(array_name), Index(index), MemberName(member_name){};
+  ~ArrayMemberAccessAST(){};
+  static inline bool classof(ArrayMemberAccessAST const*){return true;};
+  static inline bool classof(BaseAST const* base){
+    return base->getValueID() == ArrayMemberAccessID;
+  };
+  std::string getArrayName(){return ArrayName;};
+  BaseAST *getIndex(){return Index;};
+  std::string getMemberName(){return MemberName;};
+};
+/*
+ *  break文を表すAST
+ */
+class BreakStmtAST : public BaseAST
+{
+public:
+  BreakStmtAST() : BaseAST(BreakStmtID){};
+  ~BreakStmtAST(){};
+  static inline bool classof(BreakStmtAST const*){return true;};
+  static inline bool classof(BaseAST const* base){
+    return base->getValueID() == BreakStmtID;
+  };
+};
+/*
+ *  continue文を表すAST
+ */
+class ContinueStmtAST : public BaseAST
+{
+public:
+  ContinueStmtAST() : BaseAST(ContinueStmtID){};
+  ~ContinueStmtAST(){};
+  static inline bool classof(ContinueStmtAST const*){return true;};
+  static inline bool classof(BaseAST const* base){
+    return base->getValueID() == ContinueStmtID;
+  };
 };
 /*
  *  sizeof(型) を表すAST

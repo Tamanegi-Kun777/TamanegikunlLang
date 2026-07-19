@@ -35,6 +35,9 @@ private:
   std::map<std::string, llvm::StructType*> StructTypeTable;
   std::map<std::string, StructDeclAST*> StructInfoTable;
   std::map<std::string, std::string> VariableTypeTable;
+  std::vector<llvm::BasicBlock*> BreakTargets;
+  std::vector<llvm::BasicBlock*> ContinueTargets;
+public:
 
 public:
   CodeGen();
@@ -58,6 +61,8 @@ private:
   llvm::Value *generateStatement(BaseAST *stmt);
   llvm::Value *generateIfStatement(IfStmtAST *if_stmt);
   llvm::Value *generateWhileStatement(WhileStmtAST *while_stmt);
+  llvm::Value *generateBreak();
+  llvm::Value *generateContinue();
   llvm::Value *generateForStatement(ForStmtAST *for_stmt);
   llvm::Value *generateBinaryExprssion(BinaryExprAST *bin_expr);
   llvm::Value *generateCallExpression(CallExprAST *call_expr);
@@ -68,6 +73,7 @@ private:
   llvm::Value *generateStringAssign(BinaryExprAST *bin_expr);
   llvm::Value *generateEnumValueAssign(BinaryExprAST *bin_expr);
   llvm::Value *generateMemberArrayAddress(MemberArrayAccessAST *member_array);
+  llvm::Value *generateArrayMemberAddress(ArrayMemberAccessAST *array_member);
   llvm::Value *generateSizeof(SizeofAST *sizeof_ast);
 };
 
