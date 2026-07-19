@@ -688,8 +688,11 @@ llvm::Value *CodeGen::generateCallExpression(CallExprAST *call_expr){
     }
     arg_vec.push_back(arg_v);
   }
-
-  return Builder->CreateCall(Mod->getFunction(call_expr->getCallee()), arg_vec, "call_tmp");
+  llvm::Function *fn = Mod->getFunction(call_expr->getCallee());
+  if(fn->getReturnType()->isVoidTy()){
+    return Builder->CreateCall(fn, arg_vec);
+  }
+  return Builder->CreateCall(fn, arg_vec, "call_tmp");
 }
 
 llvm::Value *CodeGen::generateJumpStatement(JumpStmtAST *jump_stmt){
