@@ -503,6 +503,9 @@ llvm::Value *CodeGen::generateBinaryExprssion(BinaryExprAST *bin_expr){
       llvm::Value *addr = generateMemberArrayAddress(llvm::dyn_cast<MemberArrayAccessAST>(lhs));
       lhs_v = Builder->CreateLoad(addr->getType()->getPointerElementType(), addr, "member_array_tmp");
     }
+    else if(llvm::isa<SizeofAST>(lhs)){
+      lhs_v = generateSizeof(llvm::dyn_cast<SizeofAST>(lhs));
+    }
   }
   if(llvm::isa<BinaryExprAST>(rhs)){
     rhs_v = generateBinaryExprssion(llvm::dyn_cast<BinaryExprAST>(rhs));
@@ -531,6 +534,9 @@ llvm::Value *CodeGen::generateBinaryExprssion(BinaryExprAST *bin_expr){
   else if(llvm::isa<MemberArrayAccessAST>(rhs)){
     llvm::Value *addr = generateMemberArrayAddress(llvm::dyn_cast<MemberArrayAccessAST>(rhs));
     rhs_v = Builder->CreateLoad(addr->getType()->getPointerElementType(), addr, "member_array_tmp");
+  }
+  else if(llvm::isa<SizeofAST>(rhs)){
+    rhs_v = generateSizeof(llvm::dyn_cast<SizeofAST>(rhs));
   }
   // double が絡む演算のため型を揃える（代入以外で使う）
   bool is_float = (lhs_v && lhs_v->getType()->isDoubleTy()) || (rhs_v && rhs_v->getType()->isDoubleTy());
@@ -649,6 +655,9 @@ llvm::Value *CodeGen::generateCallExpression(CallExprAST *call_expr){
     else if(llvm::isa<FloatNumberAST>(arg)){
       arg_v = generateFloatNumber(llvm::dyn_cast<FloatNumberAST>(arg)->getValue());
     }
+    else if(llvm::isa<SizeofAST>(arg)){
+      arg_v = generateSizeof(llvm::dyn_cast<SizeofAST>(arg));
+    }
     // 引数を関数の期待する型に変換
     llvm::Function *callee = Mod->getFunction(call_expr->getCallee());
     if(callee && i < (int)callee->arg_size()){
@@ -696,6 +705,9 @@ llvm::Value *CodeGen::generateJumpStatement(JumpStmtAST *jump_stmt){
     llvm::Value *addr = generateMemberArrayAddress(llvm::dyn_cast<MemberArrayAccessAST>(expr));
     DBG("[CG] JumpStmt memberarray: addr=%p\n", (void*)addr);
     ret_v = Builder->CreateLoad(addr->getType()->getPointerElementType(), addr, "member_array_tmp");
+  }
+  else if(llvm::isa<SizeofAST>(expr)){
+    ret_v = generateSizeof(llvm::dyn_cast<SizeofAST>(expr));
   }
   DBG("[CG] JumpStmt: exprType binary=%d var=%d num=%d, ret_v=%p\n",
           llvm::isa<BinaryExprAST>(expr), llvm::isa<VariableAST>(expr),
@@ -895,4 +907,9 @@ llvm::Value *CodeGen::generateMemberArrayAddress(MemberArrayAccessAST *member_ar
   indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Context), 0));
   indices.push_back(index_v);
   return Builder->CreateInBoundsGEP(array_ptr->getType()->getPointerElementType(), array_ptr, indices, "member_elem_ptr");
+}
+llvm::Value *CodeGen::generateSizeof(SizeofAST *sizeof_ast){
+  llvm::Type *type = getLLVMType(sizeof_ast->getTypeName());
+  uint64_t size = Mod->getDataLayout().getTypeAllocSize(type);
+  return llvm::ConstantInt::get(llvm::Type::getInt32Ty(Context), size);
 }

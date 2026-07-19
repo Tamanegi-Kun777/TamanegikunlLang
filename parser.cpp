@@ -858,6 +858,11 @@ BaseAST *Parser::visitPrimaryExpression(){
       type_name = "double";
       Tokens->getNextToken();
     }
+    else if(Tokens->getCurType() == TOK_IDENTIFIER &&
+      StructTable.find(Tokens->getCurString()) != StructTable.end()){
+      type_name = Tokens->getCurString();
+      Tokens->getNextToken();
+    }
     else{
       Tokens->applyTokenIndex(bkup);
       return NULL;
@@ -871,20 +876,7 @@ BaseAST *Parser::visitPrimaryExpression(){
       return NULL;
     }
     Tokens->getNextToken();
-    int size = 4;
-    if(type_name.length() > 0 && type_name.at(type_name.length() - 1) == '*'){
-      size = 8;
-    }
-    else if(type_name == "int"){
-      size = 4;
-    }
-    else if(type_name == "char"){
-      size = 1;
-    }
-    else if(type_name == "double"){
-      size = 8;
-    }
-    return new NumberAST(size);
+    return new SizeofAST(type_name);
   }
   else if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "("){
     Tokens->getNextToken();
@@ -1534,7 +1526,7 @@ VariableDeclAST *Parser::visitVariableDeclaration(){
     Tokens->getNextToken();
   }
   else if(Tokens->getCurType() == TOK_IDENTIFIER &&
-          StructTable.find(Tokens->getCurString()) != StructTable.end()){
+    StructTable.find(Tokens->getCurString()) != StructTable.end()){
     type_name = Tokens->getCurString();
     Tokens->getNextToken();
   }

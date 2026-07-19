@@ -27,7 +27,8 @@ enum AstID
   ArrayAccessID,
   StringLiteralID,
   EnumValueID,
-  MemberArrayAccessID
+  MemberArrayAccessID,
+  SizeofID
 };
 // ファイルの、先頭あたりに、追加
 class PrototypeAST;
@@ -352,6 +353,22 @@ public:
   std::string getVariableName(){return VariableName;};
   std::string getMemberName(){return MemberName;};
   BaseAST *getIndex(){return Index;};
+};
+/*
+ *  sizeof(型) を表すAST
+ */
+class SizeofAST : public BaseAST
+{
+  std::string TypeName;
+public:
+  SizeofAST(const std::string &type_name)
+    : BaseAST(SizeofID), TypeName(type_name){};
+  ~SizeofAST(){};
+  static inline bool classof(SizeofAST const*){return true;};
+  static inline bool classof(BaseAST const* base){
+    return base->getValueID() == SizeofID;
+  };
+  std::string getTypeName(){return TypeName;};
 };
 /*
  *  配列要素アクセス(a[3])を表すAST

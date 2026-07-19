@@ -68,6 +68,7 @@ private:
   llvm::Value *generateStringAssign(BinaryExprAST *bin_expr);
   llvm::Value *generateEnumValueAssign(BinaryExprAST *bin_expr);
   llvm::Value *generateMemberArrayAddress(MemberArrayAccessAST *member_array);
+  llvm::Value *generateSizeof(SizeofAST *sizeof_ast);
 };
 
 #endif
