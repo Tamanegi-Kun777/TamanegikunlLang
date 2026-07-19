@@ -421,7 +421,11 @@ PrototypeAST *Parser::visitPrototype(){
   else{
     return NULL;
   }
-
+  // ポインタ: 型の後に * があれば型名に付ける
+  while(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "*"){
+    ret_type = ret_type + "*";
+    Tokens->getNextToken();
+  }
   // 関数名
   std::string name;
   if(Tokens->getCurType() == TOK_IDENTIFIER){
@@ -457,7 +461,11 @@ PrototypeAST *Parser::visitPrototype(){
     else{
       break;
     }
-
+    // ポインタ: 型の後に * があれば型名に付ける
+    while(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "*"){
+      param_type = param_type + "*";
+      Tokens->getNextToken();
+    }
     if(Tokens->getCurType() == TOK_IDENTIFIER){
       // 引数の変数名に重複が無いか確認
       if(std::find(param_list.begin(), param_list.end(), Tokens->getCurString()) != param_list.end()){
