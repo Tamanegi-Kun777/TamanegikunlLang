@@ -45,9 +45,13 @@ public:
 private:
   //int ErrorLine;
   std::string ErrorToken;
+  int FurthestIndex;
+  int FurthestLine;
+  std::string FurthestToken;
 /*
  *  各種構文解析メソッド
  */
+  void recordFurthest();
   bool visitTranslationUnit();
   bool visitExternalDeclaration(TranslationUnitAST *tunit);
   StructDeclAST *visitStructDeclaration();

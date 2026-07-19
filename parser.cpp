@@ -7,6 +7,8 @@ Parser::Parser(std::string filename){
   // 外部関数を登録
   PrototypeTable["malloc"] = 1;
   PrototypeTable["free"] = 1;
+  FurthestIndex = -1;
+  FurthestLine = 0;
 };
 
 /*  構文解析実行
@@ -31,7 +33,14 @@ TranslationUnitAST &Parser::getAST(){
     return *(new TranslationUnitAST());
   }
 };
-
+void Parser::recordFurthest(){
+  int idx = Tokens->getCurIndex();
+  if(idx > FurthestIndex){
+    FurthestIndex = idx;
+    FurthestLine = Tokens->getCurLine();
+    FurthestToken = Tokens->getCurString();
+  }
+}
 // TranslationUnit用構文解析メソッド
 bool Parser::visitTranslationUnit(){
   DBG("[DEBUG] visitTranslationUnit start\n");//追加
@@ -41,7 +50,7 @@ bool Parser::visitTranslationUnit(){
   while(true){
     if(!visitExternalDeclaration(TU)){
       fprintf(stderr, "error: line %d: unexpected token '%s'\n",
-              Tokens->getCurLine(), Tokens->getCurString().c_str());
+              Tokens->getFurthestLine(), Tokens->getFurthestString().c_str());
       SAFE_DELETE(TU);
       return false;
     }

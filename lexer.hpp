@@ -69,9 +69,12 @@ class TokenStream
 private:
   std::vector<Token*> Tokens;
   int CurIndex;
+  int FurthestIndex;
+  int FurthestLine;
+  std::string FurthestString;
 
 public:
-  TokenStream() : CurIndex(0){};
+  TokenStream(){CurIndex=0; FurthestIndex=-1; FurthestLine=0;};
   ~TokenStream();
 
   bool ungetToken(int Times=1);
@@ -80,6 +83,8 @@ public:
     Tokens.push_back(token);
     return true;
   }
+  int getFurthestLine(){return FurthestLine;};
+  std::string getFurthestString(){return FurthestString;};
   int getCurLine(){return Tokens[CurIndex]->getLine();};
   Token getToken();
 
@@ -91,7 +96,15 @@ public:
 
   int getCurIndex(){return CurIndex;};
 
-  bool applyTokenIndex(int index){CurIndex = index; return true;}
+  bool applyTokenIndex(int index){
+    if(CurIndex > FurthestIndex){
+      FurthestIndex = CurIndex;
+      FurthestLine = Tokens[CurIndex]->getLine();
+      FurthestString = Tokens[CurIndex]->getTokenString();
+    }
+    CurIndex = index;
+    return true;
+  };
   bool printTokens();
 };
 
