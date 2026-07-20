@@ -632,6 +632,15 @@ llvm::Value *CodeGen::generateBinaryExprssion(BinaryExprAST *bin_expr){
     if(lhs_v) lhs_v = convertType(lhs_v, llvm::Type::getDoubleTy(Context));
     if(rhs_v) rhs_v = convertType(rhs_v, llvm::Type::getDoubleTy(Context));
   }
+  // ポインタと整数の比較: 整数側をポインタ型に変換
+  if((bin_expr->getOp() == "==" || bin_expr->getOp() == "!=") && lhs_v && rhs_v){
+    if(lhs_v->getType()->isPointerTy() && rhs_v->getType()->isIntegerTy()){
+      rhs_v = Builder->CreateIntToPtr(rhs_v, lhs_v->getType(), "int2ptr");
+    }
+    else if(rhs_v->getType()->isPointerTy() && lhs_v->getType()->isIntegerTy()){
+      lhs_v = Builder->CreateIntToPtr(lhs_v, rhs_v->getType(), "int2ptr");
+    }
+  }  
   if(bin_expr->getOp() == "="){
     llvm::Type *elem_type = lhs_v->getType()->getPointerElementType();
     rhs_v = convertType(rhs_v, elem_type);
