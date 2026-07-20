@@ -1,0 +1,10 @@
+int sum(int* p){
+  return p[0] + p[1];
+}
+int main(){
+  int* arr;
+  arr = malloc(4 * sizeof(int));
+  arr[0] = 10;
+  arr[1] = 20;
+  return sum(arr);
+}

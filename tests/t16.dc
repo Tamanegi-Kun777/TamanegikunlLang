@@ -1,0 +1,6 @@
+int main(){
+  int* p;
+  p = malloc(10 * sizeof(int));
+  p[0] = 42;
+  return p[0];
+}

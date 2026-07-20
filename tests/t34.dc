@@ -1,0 +1,11 @@
+import "lib_t34.dc";
+int main(){
+  int* path;
+  path = malloc(5 * sizeof(int));
+  path[0] = 1;
+  path[1] = 0;
+  path[2] = 1;
+  path[3] = 1;
+  path[4] = 0;
+  return pathToAddr(path, 5);
+}

@@ -296,6 +296,20 @@ llvm::Value *CodeGen::generateStatement(BaseAST *stmt){
   else if(llvm::isa<NotExprAST>(stmt)){
     return generateNotExpression(llvm::dyn_cast<NotExprAST>(stmt));
   }
+  else if(llvm::isa<VariableAST>(stmt)){
+    return generateVariable(llvm::dyn_cast<VariableAST>(stmt));
+  }
+  else if(llvm::isa<NumberAST>(stmt)){
+    return generateNumber(llvm::dyn_cast<NumberAST>(stmt)->getNumberValue());
+  }
+  else if(llvm::isa<ArrayAccessAST>(stmt)){
+    llvm::Value *addr = generateArrayAddress(llvm::dyn_cast<ArrayAccessAST>(stmt));
+    return Builder->CreateLoad(addr->getType()->getPointerElementType(), addr, "array_tmp");
+  }
+  else if(llvm::isa<DerefAST>(stmt)){
+    llvm::Value *addr = generateDeref(llvm::dyn_cast<DerefAST>(stmt));
+    return Builder->CreateLoad(addr->getType()->getPointerElementType(), addr, "deref_tmp");
+  }
   else{
     return NULL;
   }

@@ -1,0 +1,9 @@
+int pathToAddr(int* path, int depth){
+  int addr;
+  int i;
+  addr = 0;
+  for(i = 0; i < depth; i = i + 1){
+    addr = (addr << 1) | path[i];
+  }
+  return addr;
+}

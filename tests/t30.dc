@@ -1,0 +1,10 @@
+class Node { int key; int value; }
+int main(){
+  Node* nodes;
+  int i;
+  nodes = malloc(8 * sizeof(Node));
+  for(i = 0; i < 8; i = i + 1){
+    nodes[i].key = i * 10;
+  }
+  return nodes[5].key;
+}

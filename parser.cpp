@@ -760,7 +760,7 @@ BaseAST *Parser::visitAssignmentExpression(){
       }
     }
   }
-  BaseAST *add_expr = visitRelationalExpression();
+  BaseAST *add_expr = visitLogicalOrExpression();
   if(add_expr){
     return add_expr;
   }
@@ -1181,6 +1181,37 @@ else if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "<<"){
       Tokens->applyTokenIndex(bkup);
       return NULL;
     }
+  }
+  return lhs;
+}
+BaseAST *Parser::visitLogicalOrExpression(){
+  BaseAST *lhs = visitLogicalAndExpression();
+  if(!lhs){
+    return NULL;
+  }
+  while(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "||"){
+    Tokens->getNextToken();
+    BaseAST *rhs = visitLogicalAndExpression();
+    if(!rhs){
+      return NULL;
+    }
+    lhs = new LogicalExprAST("||", lhs, rhs);
+  }
+  return lhs;
+}
+
+BaseAST *Parser::visitLogicalAndExpression(){
+  BaseAST *lhs = visitRelationalExpression();
+  if(!lhs){
+    return NULL;
+  }
+  while(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "&&"){
+    Tokens->getNextToken();
+    BaseAST *rhs = visitRelationalExpression();
+    if(!rhs){
+      return NULL;
+    }
+    lhs = new LogicalExprAST("&&", lhs, rhs);
   }
   return lhs;
 }

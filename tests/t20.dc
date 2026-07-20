@@ -1,0 +1,11 @@
+int* makeArray(int n){
+  int* p;
+  p = malloc(n * sizeof(int));
+  p[0] = 42;
+  return p;
+}
+int main(){
+  int* arr;
+  arr = makeArray(10);
+  return arr[0];
+}

@@ -1,0 +1,5 @@
+class Tree {
+  int depth;
+  int size;
+  int* leaves;
+}
