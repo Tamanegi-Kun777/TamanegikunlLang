@@ -943,6 +943,15 @@ BaseAST *Parser::visitPrimaryExpression(){
     Tokens->getNextToken();
     return new StringLiteralAST(str);
   }
+  else if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "!"){
+    Tokens->getNextToken();
+    BaseAST *expr = visitPrimaryExpression();
+    if(!expr){
+      Tokens->applyTokenIndex(bkup);
+      return NULL;
+    }
+    return new NotExprAST(expr);
+  }
   else if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "&"){
     Tokens->getNextToken();
     if(Tokens->getCurType() == TOK_IDENTIFIER &&
