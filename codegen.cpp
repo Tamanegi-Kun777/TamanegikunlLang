@@ -121,6 +121,9 @@ llvm::Type *CodeGen::getLLVMType(const std::string &type_name){
   return llvm::Type::getInt32Ty(Context);
 }
 llvm::Value *CodeGen::convertType(llvm::Value *value, llvm::Type *target_type){
+  if(!value){
+    return NULL;
+  }
   llvm::Type *src_type = value->getType();
   if(src_type == target_type){
     return value;
@@ -149,6 +152,7 @@ llvm::Value *CodeGen::convertType(llvm::Value *value, llvm::Type *target_type){
   }
   return value;
 }
+
 llvm::Function *CodeGen::generatePrototype(PrototypeAST *proto, llvm::Module *mod){
   llvm::Function *func = mod->getFunction(proto->getName());
   if(func){
@@ -809,6 +813,12 @@ llvm::Value *CodeGen::generateJumpStatement(JumpStmtAST *jump_stmt){
   else if(llvm::isa<AddressOfAST>(expr)){
     ret_v = generateAddressOf(llvm::dyn_cast<AddressOfAST>(expr));
   }
+  else if(llvm::isa<NotExprAST>(expr)){
+    ret_v = generateNotExpression(llvm::dyn_cast<NotExprAST>(expr));
+  }
+  else if(llvm::isa<LogicalExprAST>(expr)){
+    ret_v = generateLogicalExpression(llvm::dyn_cast<LogicalExprAST>(expr));
+  }
   else if(llvm::isa<DerefAST>(expr)){
     llvm::Value *deref_addr = generateDeref(llvm::dyn_cast<DerefAST>(expr));
     ret_v = Builder->CreateLoad(deref_addr->getType()->getPointerElementType(), deref_addr, "deref_tmp");
@@ -1163,7 +1173,9 @@ llvm::Value *CodeGen::generateLogicalExpression(LogicalExprAST *logical_expr){
 }
 
 llvm::Value *CodeGen::generateNotExpression(NotExprAST *not_expr){
+  DBG("[CG] not: called\n");
   llvm::Value *v = generateStatement(not_expr->getExpr());
+  DBG("[CG] not: inner v=%p\n", (void*)v);
   if(!v){
     return NULL;
   }
