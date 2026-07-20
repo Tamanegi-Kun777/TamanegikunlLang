@@ -150,6 +150,14 @@ llvm::Value *CodeGen::convertType(llvm::Value *value, llvm::Type *target_type){
   if(src_type->isDoubleTy() && target_type->isIntegerTy()){
     return Builder->CreateFPToSI(value, target_type, "fptosi");
   }
+  // 整数 → ポインタ
+  if(src_type->isIntegerTy() && target_type->isPointerTy()){
+    return Builder->CreateIntToPtr(value, target_type, "int2ptr");
+  }
+  // ポインタ → 別のポインタ型
+  if(src_type->isPointerTy() && target_type->isPointerTy() && src_type != target_type){
+    return Builder->CreateBitCast(value, target_type, "ptrcast");
+  }
   return value;
 }
 
