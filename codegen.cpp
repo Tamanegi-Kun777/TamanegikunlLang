@@ -310,6 +310,12 @@ llvm::Value *CodeGen::generateStatement(BaseAST *stmt){
     llvm::Value *addr = generateDeref(llvm::dyn_cast<DerefAST>(stmt));
     return Builder->CreateLoad(addr->getType()->getPointerElementType(), addr, "deref_tmp");
   }
+  else if(llvm::isa<LogicalExprAST>(cond)){
+    cond_v = generateLogicalExpression(llvm::dyn_cast<LogicalExprAST>(cond));
+  }
+  else if(llvm::isa<NotExprAST>(cond)){
+    cond_v = generateNotExpression(llvm::dyn_cast<NotExprAST>(cond));
+  }
   else{
     return NULL;
   }
