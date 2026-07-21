@@ -845,9 +845,9 @@ llvm::Value *CodeGen::generateJumpStatement(JumpStmtAST *jump_stmt){
     llvm::Value *deref_addr = generateDeref(llvm::dyn_cast<DerefAST>(expr));
     ret_v = Builder->CreateLoad(deref_addr->getType()->getPointerElementType(), deref_addr, "deref_tmp");
   }
-  else if(llvm::isa<ArrayMemberAccessAST>(expr)){
-    llvm::Value *addr = generateArrayMemberAddress(llvm::dyn_cast<ArrayMemberAccessAST>(expr));
-    ret_v = Builder->CreateLoad(addr->getType()->getPointerElementType(), addr, "arr_member_tmp");
+  else if(llvm::isa<ChainMemberAccessAST>(expr)){
+    llvm::Value *addr = generateChainMemberAddress(llvm::dyn_cast<ChainMemberAccessAST>(expr));
+    ret_v = Builder->CreateLoad(addr->getType()->getPointerElementType(), addr, "chain_tmp");
   }
   DBG("[CG] JumpStmt: exprType binary=%d var=%d num=%d, ret_v=%p\n",
           llvm::isa<BinaryExprAST>(expr), llvm::isa<VariableAST>(expr),

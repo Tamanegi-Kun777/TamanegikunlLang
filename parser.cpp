@@ -663,6 +663,36 @@ BaseAST *Parser::visitAssignmentExpression(){
               return NULL;
             }
           }
+          else if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "."){
+            ChainMemberAccessAST *chain = new ChainMemberAccessAST(lhs_name);
+            chain->addMember(member_name);
+            while(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "."){
+              Tokens->getNextToken();
+              if(Tokens->getCurType() != TOK_IDENTIFIER){
+                SAFE_DELETE(chain);
+                Tokens->applyTokenIndex(bkup);
+                return NULL;
+              }
+              chain->addMember(Tokens->getCurString());
+              Tokens->getNextToken();
+            }
+            lhs = chain;
+          }
+          else if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "."){
+            ChainMemberAccessAST *chain = new ChainMemberAccessAST(lhs_name);
+            chain->addMember(member_name);
+            while(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "."){
+              Tokens->getNextToken();
+              if(Tokens->getCurType() != TOK_IDENTIFIER){
+                SAFE_DELETE(chain);
+                Tokens->applyTokenIndex(bkup);
+                return NULL;
+              }
+              chain->addMember(Tokens->getCurString());
+              Tokens->getNextToken();
+            }
+            lhs = chain;
+          }
           else{
             lhs = new MemberAccessAST(lhs_name, member_name);
           }

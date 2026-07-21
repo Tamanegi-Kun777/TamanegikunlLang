@@ -1,0 +1,8 @@
+class A { int v; }
+class B { A a; int x; }
+class C { B b; int y; }
+int main(){
+  C c;
+  c.b.a.v = 42;
+  return c.b.a.v;
+}
