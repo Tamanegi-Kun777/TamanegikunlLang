@@ -1,0 +1,9 @@
+class Inner { int v; }
+class Outer { Inner in; }
+int main(){
+  Outer o;
+  int x;
+  o.in.v = 42;
+  x = o.in.v;
+  return x;
+}

@@ -639,6 +639,10 @@ llvm::Value *CodeGen::generateBinaryExprssion(BinaryExprAST *bin_expr){
     llvm::Value *deref_addr = generateDeref(llvm::dyn_cast<DerefAST>(rhs));
     rhs_v = Builder->CreateLoad(deref_addr->getType()->getPointerElementType(), deref_addr, "deref_tmp");
   }
+  else if(llvm::isa<ChainMemberAccessAST>(rhs)){
+    llvm::Value *addr = generateChainMemberAddress(llvm::dyn_cast<ChainMemberAccessAST>(rhs));
+    rhs_v = Builder->CreateLoad(addr->getType()->getPointerElementType(), addr, "chain_tmp");
+  }
   // double が絡む演算のため型を揃える（代入以外で使う）
   bool is_float = (lhs_v && lhs_v->getType()->isDoubleTy()) || (rhs_v && rhs_v->getType()->isDoubleTy());
   if(is_float && bin_expr->getOp() != "="){
