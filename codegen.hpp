@@ -53,6 +53,7 @@ private:
   llvm::Type *getLLVMType(const std::string &type_name);
   llvm::Value *convertType(llvm::Value *value, llvm::Type *target_type);
   llvm::Value *generateMemberAddress(MemberAccessAST *member);
+  llvm::Value *generateChainMemberAddress(ChainMemberAccessAST *chain);
   llvm::Value *generateArrayAddress(ArrayAccessAST *array);
   void registerStruct(StructDeclAST *struct_decl);
   void generateMethod(const std::string &struct_name, FunctionAST *method);

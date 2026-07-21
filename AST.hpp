@@ -35,7 +35,8 @@ enum AstID
   AddressOfID,
   DerefID,
   LogicalExprID,
-  NotExprID
+  NotExprID,
+  ChainMemberAccessID
 };
 
 // ファイルの、先頭あたりに、追加
@@ -487,6 +488,25 @@ public:
     return base->getValueID() == NotExprID;
   };
   BaseAST *getExpr(){return Expr;};
+};
+class ChainMemberAccessAST : public BaseAST {
+  std::string VariableName;
+  std::vector<std::string> Members;
+
+public:
+  ChainMemberAccessAST(const std::string &var_name)
+    : BaseAST(ChainMemberAccessID), VariableName(var_name){};
+  ~ChainMemberAccessAST(){};
+
+  static inline bool classof(ChainMemberAccessAST const*){return true;};
+  static inline bool classof(BaseAST const* base){
+    return base->getValueID() == ChainMemberAccessID;
+  };
+
+  void addMember(const std::string &member){Members.push_back(member);};
+  std::string getVariableName(){return VariableName;};
+  int getMemberNum(){return Members.size();};
+  std::string getMember(int i){return Members[i];};
 };
 /*
  *  配列要素アクセス(a[3])を表すAST

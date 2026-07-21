@@ -322,16 +322,17 @@ llvm::Value *CodeGen::generateStatement(BaseAST *stmt){
     llvm::Value *addr = generateDeref(llvm::dyn_cast<DerefAST>(stmt));
     return Builder->CreateLoad(addr->getType()->getPointerElementType(), addr, "deref_tmp");
   }
+  else if(llvm::isa<ChainMemberAccessAST>(stmt)){
+    llvm::Value *addr = generateChainMemberAddress(llvm::dyn_cast<ChainMemberAccessAST>(stmt));
+    if(!addr){ return NULL; }
+    return Builder->CreateLoad(addr->getType()->getPointerElementType(), addr, "chain_tmp");
+  }
 //  else if(llvm::isa<LogicalExprAST>(cond)){
 //    cond_v = generateLogicalExpression(llvm::dyn_cast<LogicalExprAST>(cond));
 //  }
 //  else if(llvm::isa<NotExprAST>(cond)){
 //    cond_v = generateNotExpression(llvm::dyn_cast<NotExprAST>(cond));
 //  }
-  else if(llvm::isa<DerefAST>(stmt)){
-    llvm::Value *addr = generateDeref(llvm::dyn_cast<DerefAST>(stmt));
-    return Builder->CreateLoad(addr->getType()->getPointerElementType(), addr, "deref_tmp");
-  }
   else{
     return NULL;
   }
@@ -548,6 +549,9 @@ llvm::Value *CodeGen::generateBinaryExprssion(BinaryExprAST *bin_expr){
     else if(llvm::isa<DerefAST>(lhs)){
       lhs_v = generateDeref(llvm::dyn_cast<DerefAST>(lhs));
     }
+    else if(llvm::isa<ChainMemberAccessAST>(lhs)){
+      lhs_v = generateChainMemberAddress(llvm::dyn_cast<ChainMemberAccessAST>(lhs));
+    }
     else{
       VariableAST *lhs_var = llvm::dyn_cast<VariableAST>(lhs);
       llvm::ValueSymbolTable *vs_table = CurFunc->getValueSymbolTable();
@@ -584,6 +588,7 @@ llvm::Value *CodeGen::generateBinaryExprssion(BinaryExprAST *bin_expr){
       llvm::Value *addr = generateArrayMemberAddress(llvm::dyn_cast<ArrayMemberAccessAST>(lhs));
       lhs_v = Builder->CreateLoad(addr->getType()->getPointerElementType(), addr, "arr_member_tmp");
     }
+
     else if(llvm::isa<DerefAST>(lhs)){
       llvm::Value *deref_addr = generateDeref(llvm::dyn_cast<DerefAST>(lhs));
       lhs_v = Builder->CreateLoad(deref_addr->getType()->getPointerElementType(), deref_addr, "deref_tmp");
@@ -891,6 +896,36 @@ llvm::Value *CodeGen::generateMemberAddress(MemberAccessAST *member){
 
   // getelementptr で「p の member_index 番目のフィールド」のアドレスを計算
   return Builder->CreateStructGEP(struct_type, base_ptr, member_index, "member_ptr");
+}
+llvm::Value *CodeGen::generateChainMemberAddress(ChainMemberAccessAST *chain){
+  llvm::ValueSymbolTable *vs_table = CurFunc->getValueSymbolTable();
+  llvm::Value *addr = vs_table->lookup(chain->getVariableName());
+  if(!addr){
+    return NULL;
+  }
+  std::string cur_type = VariableTypeTable[chain->getVariableName()];
+
+  for(int i = 0; i < chain->getMemberNum(); i++){
+    std::string member_name = chain->getMember(i);
+    if(StructInfoTable.find(cur_type) == StructInfoTable.end()){
+      return NULL;
+    }
+    StructDeclAST *struct_decl = StructInfoTable[cur_type];
+    int index = -1;
+    for(int j = 0; j < struct_decl->getMemberNum(); j++){
+      if(struct_decl->getMemberName(j) == member_name){
+        index = j;
+        cur_type = struct_decl->getMemberType(j);
+        break;
+      }
+    }
+    if(index < 0){
+      return NULL;
+    }
+    addr = Builder->CreateStructGEP(
+             addr->getType()->getPointerElementType(), addr, index, "chain_ptr");
+  }
+  return addr;
 }
 llvm::Value *CodeGen::generateArrayAddress(ArrayAccessAST *array){
   // 配列変数のアドレス

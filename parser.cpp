@@ -900,6 +900,22 @@ BaseAST *Parser::visitPrimaryExpression(){
           Tokens->applyTokenIndex(bkup);
           return NULL;
         }
+        // 次も "." なら連鎖（o.in.v）
+        if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "."){
+          ChainMemberAccessAST *chain = new ChainMemberAccessAST(var_name);
+          chain->addMember(member_name);
+          while(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "."){
+            Tokens->getNextToken();
+            if(Tokens->getCurType() != TOK_IDENTIFIER){
+              SAFE_DELETE(chain);
+              Tokens->applyTokenIndex(bkup);
+              return NULL;
+            }
+            chain->addMember(Tokens->getCurString());
+            Tokens->getNextToken();
+          }
+          return chain;
+        }
         return new MemberAccessAST(var_name, member_name);
       }
       else{
