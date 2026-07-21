@@ -1,0 +1,6 @@
+class Row { int col[4]; }
+int main(){
+  Row a[3];
+  a[1].col[2] = 42;
+  return a[1].col[2];
+}

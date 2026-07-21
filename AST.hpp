@@ -85,6 +85,7 @@ private:
   std::string TypeName;
   DeclType Type;
   int ArraySize;
+  std::vector<int> ArrayDims;
 public:
   VariableDeclAST(const std::string &name, const std::string &type_name = "int") : BaseAST(VariableDeclID), Name(name), TypeName(type_name), ArraySize(0){};
 
@@ -103,6 +104,9 @@ public:
   std::string getTypeName(){return TypeName;};
   int getArraySize(){return ArraySize;};
   void setArraySize(int size){ArraySize = size;};
+  void addArrayDim(int size){ArrayDims.push_back(size);};
+  int getArrayDimNum(){return ArrayDims.size();};
+  int getArrayDim(int i){return ArrayDims[i];};
   // 変数の宣言種別を設定する
   bool setDeclType(DeclType type){
     Type = type;

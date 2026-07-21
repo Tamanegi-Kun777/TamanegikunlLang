@@ -1788,11 +1788,12 @@ VariableDeclAST *Parser::visitVariableDeclaration(){
   }
 
   // 配列宣言: 名前の後に "[サイズ]" があれば配列
-  int array_size = 0;
-  if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "["){
+int array_size = 0;
+  std::vector<int> array_dims;
+  while(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "["){
     Tokens->getNextToken();
     if(Tokens->getCurType() == TOK_DIGIT){
-      array_size = Tokens->getCurNumVal();
+      array_dims.push_back(Tokens->getCurNumVal());
       Tokens->getNextToken();
     }
     else{
@@ -1805,6 +1806,13 @@ VariableDeclAST *Parser::visitVariableDeclaration(){
     else{
       Tokens->applyTokenIndex(bkup);
       return NULL;
+    }
+  }
+  // 総要素数を計算（3×4なら12）
+  if(array_dims.size() > 0){
+    array_size = 1;
+    for(int i = 0; i < (int)array_dims.size(); i++){
+      array_size = array_size * array_dims[i];
     }
   }
 
