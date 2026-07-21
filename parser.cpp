@@ -716,13 +716,32 @@ BaseAST *Parser::visitAssignmentExpression(){
             Tokens->getNextToken();
             if(Tokens->getCurType() == TOK_IDENTIFIER){
               std::string member_name = Tokens->getCurString();
-              Tokens->getNextToken();
+Tokens->getNextToken();
               lhs = new ArrayMemberAccessAST(lhs_name, index, member_name);
             }
             else{
               Tokens->applyTokenIndex(bkup);
               return NULL;
             }
+          }
+          else if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "["){
+            MultiArrayAccessAST *marr = new MultiArrayAccessAST(lhs_name);
+            marr->addIndex(index);
+            while(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "["){
+              Tokens->getNextToken();
+              BaseAST *idx2 = visitAssignmentExpression();
+              if(!idx2){
+                Tokens->applyTokenIndex(bkup);
+                return NULL;
+              }
+              if(!(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "]")){
+                Tokens->applyTokenIndex(bkup);
+                return NULL;
+              }
+              Tokens->getNextToken();
+              marr->addIndex(idx2);
+            }
+            lhs = marr;
           }
           else{
             lhs = new ArrayAccessAST(lhs_name, index);
@@ -889,6 +908,25 @@ BaseAST *Parser::visitPrimaryExpression(){
           }
           Tokens->applyTokenIndex(bkup);
           return NULL;
+        }
+        if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "["){
+          MultiArrayAccessAST *marr = new MultiArrayAccessAST(var_name);
+          marr->addIndex(index);
+          while(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "["){
+            Tokens->getNextToken();
+            BaseAST *idx2 = visitAssignmentExpression();
+            if(!idx2){
+              Tokens->applyTokenIndex(bkup);
+              return NULL;
+            }
+            if(!(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "]")){
+              Tokens->applyTokenIndex(bkup);
+              return NULL;
+            }
+            Tokens->getNextToken();
+            marr->addIndex(idx2);
+          }
+          return marr;
         }
         return new ArrayAccessAST(var_name, index);
       }
@@ -1808,14 +1846,13 @@ int array_size = 0;
       return NULL;
     }
   }
-  // 総要素数を計算（3×4なら12）
+
   if(array_dims.size() > 0){
     array_size = 1;
     for(int i = 0; i < (int)array_dims.size(); i++){
       array_size = array_size * array_dims[i];
     }
   }
-
   // ";"
   if(Tokens->getCurString() == ";"){
     Tokens->getNextToken();
@@ -1823,13 +1860,16 @@ int array_size = 0;
     if(array_size > 0){
       vdecl->setArraySize(array_size);
     }
+    for(int i = 0; i < (int)array_dims.size(); i++){
+      vdecl->addArrayDim(array_dims[i]);
+    }
     return vdecl;
+    }
+    else{
+      Tokens->ungetToken(2);
+      return NULL;
+    }
   }
-  else{
-    Tokens->ungetToken(2);
-    return NULL;
-  }
-}
 BaseAST *Parser::visitMultiplicativeExpression(BaseAST *lhs){
   int bkup = Tokens->getCurIndex();
 

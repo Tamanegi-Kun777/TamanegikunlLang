@@ -37,6 +37,7 @@ private:
   std::map<std::string, std::string> VariableTypeTable;
   std::vector<llvm::BasicBlock*> BreakTargets;
   std::vector<llvm::BasicBlock*> ContinueTargets;
+  std::map<std::string, std::vector<int>> ArrayDimTable;
 public:
 
 public:
@@ -80,6 +81,7 @@ private:
   llvm::Value *generateDeref(DerefAST *deref);
   llvm::Value *generateLogicalExpression(LogicalExprAST *logical_expr);
   llvm::Value *generateNotExpression(NotExprAST *not_expr);
+  llvm::Value *generateMultiArrayAddress(MultiArrayAccessAST *marr);
 };
 
 #endif

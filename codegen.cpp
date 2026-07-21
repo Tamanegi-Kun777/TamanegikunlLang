@@ -257,6 +257,9 @@ llvm::Value *CodeGen::generateFunctionStatement(FunctionStmtAST *func_stmt){
 
 llvm::Value *CodeGen::generateVariableDeclaration(VariableDeclAST *vdecl){
   llvm::Type *elem_type = getLLVMType(vdecl->getTypeName());
+  if(!elem_type){
+    return NULL;
+  }
   llvm::Type *var_type;
   if(vdecl->getArraySize() > 0){
     var_type = llvm::ArrayType::get(elem_type, vdecl->getArraySize());
@@ -266,14 +269,19 @@ llvm::Value *CodeGen::generateVariableDeclaration(VariableDeclAST *vdecl){
   }
   llvm::AllocaInst *alloca = Builder->CreateAlloca(var_type, 0, vdecl->getName());
   VariableTypeTable[vdecl->getName()] = vdecl->getTypeName();
-
+  if(vdecl->getArrayDimNum() > 0){
+    std::vector<int> dims;
+    for(int i = 0; i < vdecl->getArrayDimNum(); i++){
+      dims.push_back(vdecl->getArrayDim(i));
+    }
+    ArrayDimTable[vdecl->getName()] = dims;
+  }
   if(vdecl->getType() == VariableDeclAST::param){
     llvm::ValueSymbolTable *vs_table = CurFunc->getValueSymbolTable();
     Builder->CreateStore(vs_table->lookup(vdecl->getName().append("_arg")), alloca);
   }
   return alloca;
 }
-
 llvm::Value *CodeGen::generateStatement(BaseAST *stmt){
   if(llvm::isa<BinaryExprAST>(stmt)){
     return generateBinaryExprssion(llvm::dyn_cast<BinaryExprAST>(stmt));
@@ -551,6 +559,9 @@ llvm::Value *CodeGen::generateBinaryExprssion(BinaryExprAST *bin_expr){
     }
     else if(llvm::isa<ChainMemberAccessAST>(lhs)){
       lhs_v = generateChainMemberAddress(llvm::dyn_cast<ChainMemberAccessAST>(lhs));
+    }
+    else if(llvm::isa<MultiArrayAccessAST>(lhs)){
+      lhs_v = generateMultiArrayAddress(llvm::dyn_cast<MultiArrayAccessAST>(lhs));
     }
     else{
       VariableAST *lhs_var = llvm::dyn_cast<VariableAST>(lhs);
@@ -962,6 +973,46 @@ llvm::Value *CodeGen::generateArrayAddress(ArrayAccessAST *array){
   indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Context), 0));
   indices.push_back(index_v);
   return Builder->CreateInBoundsGEP(base_ptr->getType()->getPointerElementType(), base_ptr, indices, "array_ptr");
+}
+llvm::Value *CodeGen::generateMultiArrayAddress(MultiArrayAccessAST *marr){
+  llvm::ValueSymbolTable *vs_table = CurFunc->getValueSymbolTable();
+  llvm::Value *var = vs_table->lookup(marr->getVariableName());
+  if(!var){
+    return NULL;
+  }
+  // 次元のサイズを取得
+  std::vector<int> dims = ArrayDimTable[marr->getVariableName()];
+  if((int)dims.size() != marr->getIndexNum()){
+    return NULL;
+  }
+  // a[i][j] を i*cols + j に展開
+  llvm::Value *offset = NULL;
+  for(int k = 0; k < marr->getIndexNum(); k++){
+    llvm::Value *idx = generateStatement(marr->getIndex(k));
+    if(!idx){
+      return NULL;
+    }
+    // この次元より内側の要素数を掛ける
+    int stride = 1;
+    for(int m = k + 1; m < (int)dims.size(); m++){
+      stride = stride * dims[m];
+    }
+    if(stride != 1){
+      idx = Builder->CreateMul(idx, generateNumber(stride), "stride");
+    }
+    if(!offset){
+      offset = idx;
+    }
+    else{
+      offset = Builder->CreateAdd(offset, idx, "offset");
+    }
+  }
+  // 1次元配列としてアクセス
+  std::vector<llvm::Value*> gep_idx;
+  gep_idx.push_back(generateNumber(0));
+  gep_idx.push_back(offset);
+  return Builder->CreateInBoundsGEP(
+           var->getType()->getPointerElementType(), var, gep_idx, "marr_ptr");
 }
 llvm::Value *CodeGen::generateMethodCall(MemberAccessAST *member){
   llvm::ValueSymbolTable *vs_table = CurFunc->getValueSymbolTable();
