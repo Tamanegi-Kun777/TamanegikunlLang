@@ -1,0 +1,5 @@
+class Inner { int a; int b; }
+class Outer { Inner in; int x; }
+int main(){
+  return sizeof(Outer);
+}
