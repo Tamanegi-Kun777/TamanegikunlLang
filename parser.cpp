@@ -169,11 +169,14 @@ StructDeclAST *Parser::visitStructDeclaration(){
       continue;
     }
     // メンバ変数(int/char 名前 ;)を試す
-    if(Tokens->getCurType() == TOK_INT || Tokens->getCurType() == TOK_CHAR || Tokens->getCurType() == TOK_DOUBLE){
+  if(Tokens->getCurType() == TOK_INT || Tokens->getCurType() == TOK_CHAR || Tokens->getCurType() == TOK_DOUBLE ||
+       (Tokens->getCurType() == TOK_IDENTIFIER &&
+        StructTable.find(Tokens->getCurString()) != StructTable.end())){
       std::string member_type;
-if(Tokens->getCurType() == TOK_INT){ member_type = "int"; }
+      if(Tokens->getCurType() == TOK_INT){ member_type = "int"; }
       else if(Tokens->getCurType() == TOK_CHAR){ member_type = "char"; }
-      else{ member_type = "double"; }
+      else if(Tokens->getCurType() == TOK_DOUBLE){ member_type = "double"; }
+      else{ member_type = Tokens->getCurString(); }
       Tokens->getNextToken();
       // ポインタ: 型の後に * があれば型名に付ける
       while(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "*"){
