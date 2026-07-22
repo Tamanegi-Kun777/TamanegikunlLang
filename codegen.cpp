@@ -612,6 +612,10 @@ llvm::Value *CodeGen::generateBinaryExprssion(BinaryExprAST *bin_expr){
     else if(llvm::isa<SizeofAST>(lhs)){
       lhs_v = generateSizeof(llvm::dyn_cast<SizeofAST>(lhs));
     }
+    else if(llvm::isa<MultiArrayAccessAST>(lhs)){
+      llvm::Value *addr = generateMultiArrayAddress(llvm::dyn_cast<MultiArrayAccessAST>(lhs));
+      lhs_v = Builder->CreateLoad(addr->getType()->getPointerElementType(), addr, "marr_tmp");
+    }
   }
   if(llvm::isa<BinaryExprAST>(rhs)){
     rhs_v = generateBinaryExprssion(llvm::dyn_cast<BinaryExprAST>(rhs));
