@@ -676,20 +676,21 @@ BaseAST *Parser::visitAssignmentExpression(){
               chain->addMember(Tokens->getCurString());
               Tokens->getNextToken();
             }
-            lhs = chain;
-          }
-          else if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "."){
-            ChainMemberAccessAST *chain = new ChainMemberAccessAST(lhs_name);
-            chain->addMember(member_name);
-            while(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "."){
+            if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "["){
               Tokens->getNextToken();
-              if(Tokens->getCurType() != TOK_IDENTIFIER){
+              BaseAST *cidx = visitAssignmentExpression();
+              if(!cidx){
                 SAFE_DELETE(chain);
                 Tokens->applyTokenIndex(bkup);
                 return NULL;
               }
-              chain->addMember(Tokens->getCurString());
+              if(!(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "]")){
+                SAFE_DELETE(chain);
+                Tokens->applyTokenIndex(bkup);
+                return NULL;
+              }
               Tokens->getNextToken();
+              chain->setIndex(cidx);
             }
             lhs = chain;
           }
@@ -981,6 +982,22 @@ BaseAST *Parser::visitPrimaryExpression(){
             }
             chain->addMember(Tokens->getCurString());
             Tokens->getNextToken();
+          }
+        if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "["){
+            Tokens->getNextToken();
+            BaseAST *cidx = visitAssignmentExpression();
+            if(!cidx){
+              SAFE_DELETE(chain);
+              Tokens->applyTokenIndex(bkup);
+              return NULL;
+            }
+            if(!(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "]")){
+              SAFE_DELETE(chain);
+              Tokens->applyTokenIndex(bkup);
+              return NULL;
+            }
+            Tokens->getNextToken();
+            chain->setIndex(cidx);
           }
           return chain;
         }

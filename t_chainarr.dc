@@ -1,0 +1,7 @@
+class Inner { int arr[4]; }
+class Outer { Inner in; }
+int main(){
+  Outer o;
+  o.in.arr[2] = 42;
+  return o.in.arr[2];
+}

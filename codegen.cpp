@@ -957,6 +957,23 @@ llvm::Value *CodeGen::generateChainMemberAddress(ChainMemberAccessAST *chain){
     addr = Builder->CreateStructGEP(
              addr->getType()->getPointerElementType(), addr, index, "chain_ptr");
   }
+  // 末尾に添字があれば、さらに要素のアドレスを取る
+  if(chain->getIndex()){
+    llvm::Value *idx = generateStatement(chain->getIndex());
+    if(!idx){
+      return NULL;
+    }
+    llvm::Type *pointee = addr->getType()->getPointerElementType();
+    if(pointee->isPointerTy()){
+      llvm::Value *pval = Builder->CreateLoad(pointee, addr, "chain_ptr_val");
+      llvm::Type *elem = llvm::cast<llvm::PointerType>(pointee)->getPointerElementType();
+      return Builder->CreateInBoundsGEP(elem, pval, idx, "chain_elem");
+    }
+    std::vector<llvm::Value*> gep_idx;
+    gep_idx.push_back(generateNumber(0));
+    gep_idx.push_back(idx);
+    return Builder->CreateInBoundsGEP(pointee, addr, gep_idx, "chain_arr");
+  }
   return addr;
 }
 llvm::Value *CodeGen::generateArrayAddress(ArrayAccessAST *array){

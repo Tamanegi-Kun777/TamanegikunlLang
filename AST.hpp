@@ -497,10 +497,11 @@ public:
 class ChainMemberAccessAST : public BaseAST {
   std::string VariableName;
   std::vector<std::string> Members;
+  BaseAST *Index;
 
 public:
   ChainMemberAccessAST(const std::string &var_name)
-    : BaseAST(ChainMemberAccessID), VariableName(var_name){};
+    : BaseAST(ChainMemberAccessID), VariableName(var_name), Index(NULL){};
   ~ChainMemberAccessAST(){};
 
   static inline bool classof(ChainMemberAccessAST const*){return true;};
@@ -512,6 +513,8 @@ public:
   std::string getVariableName(){return VariableName;};
   int getMemberNum(){return Members.size();};
   std::string getMember(int i){return Members[i];};
+  void setIndex(BaseAST *index){Index = index;};
+  BaseAST *getIndex(){return Index;};
 };
 class MultiArrayAccessAST : public BaseAST {
   std::string VariableName;
