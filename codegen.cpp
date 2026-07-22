@@ -975,6 +975,12 @@ llvm::Value *CodeGen::generateArrayAddress(ArrayAccessAST *array){
   else if(llvm::isa<BinaryExprAST>(index_ast)){
     index_v = generateBinaryExprssion(llvm::dyn_cast<BinaryExprAST>(index_ast));
   }
+  else{
+    index_v = generateStatement(index_ast);
+  }
+  if(!index_v){
+    return NULL;
+  }
   // ポインタ型なら、ポインタ経由のアクセス
   llvm::Type *pointee = base_ptr->getType()->getPointerElementType();
   if(pointee->isPointerTy()){
@@ -984,6 +990,9 @@ llvm::Value *CodeGen::generateArrayAddress(ArrayAccessAST *array){
   }
   // 配列の要素型
   llvm::Type *elem_type = getLLVMType(VariableTypeTable[array->getArrayName()]);
+  if(!elem_type){
+    return NULL;
+  }
   llvm::Type *array_type = llvm::ArrayType::get(elem_type, 0);
   // getelementptr: [N x T]* の base_ptr から {0, index} で要素アドレス
   std::vector<llvm::Value*> indices;
