@@ -974,8 +974,6 @@ llvm::Value *CodeGen::generateChainMemberAddress(ChainMemberAccessAST *chain){
         addr = Builder->CreateInBoundsGEP(mp, addr, mgep, "chain_marr");
       }
     }
-  }  
-             addr->getType()->getPointerElementType(), addr, index, "chain_ptr");
   }
   // 末尾に添字があれば、さらに要素のアドレスを取る
   if(chain->getIndex()){
