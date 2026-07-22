@@ -956,6 +956,26 @@ llvm::Value *CodeGen::generateChainMemberAddress(ChainMemberAccessAST *chain){
     }
     addr = Builder->CreateStructGEP(
              addr->getType()->getPointerElementType(), addr, index, "chain_ptr");
+    if(chain->getMemberIndex(i)){
+      llvm::Value *midx = generateStatement(chain->getMemberIndex(i));
+      if(!midx){
+        return NULL;
+      }
+      llvm::Type *mp = addr->getType()->getPointerElementType();
+      if(mp->isPointerTy()){
+        llvm::Value *pval = Builder->CreateLoad(mp, addr, "chain_mptr");
+        llvm::Type *elem = llvm::cast<llvm::PointerType>(mp)->getPointerElementType();
+        addr = Builder->CreateInBoundsGEP(elem, pval, midx, "chain_melem");
+      }
+      else{
+        std::vector<llvm::Value*> mgep;
+        mgep.push_back(generateNumber(0));
+        mgep.push_back(midx);
+        addr = Builder->CreateInBoundsGEP(mp, addr, mgep, "chain_marr");
+      }
+    }
+  }  
+             addr->getType()->getPointerElementType(), addr, index, "chain_ptr");
   }
   // 末尾に添字があれば、さらに要素のアドレスを取る
   if(chain->getIndex()){

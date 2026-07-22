@@ -497,6 +497,7 @@ public:
 class ChainMemberAccessAST : public BaseAST {
   std::string VariableName;
   std::vector<std::string> Members;
+  std::vector<BaseAST*> Indices;
   BaseAST *Index;
 
 public:
@@ -509,7 +510,16 @@ public:
     return base->getValueID() == ChainMemberAccessID;
   };
 
-  void addMember(const std::string &member){Members.push_back(member);};
+  void addMember(const std::string &member){
+    Members.push_back(member);
+    Indices.push_back(NULL);
+  };
+  void setMemberIndex(BaseAST *index){
+    if(!Indices.empty()){
+      Indices[Indices.size() - 1] = index;
+    }
+  };
+  BaseAST *getMemberIndex(int i){return Indices[i];};
   std::string getVariableName(){return VariableName;};
   int getMemberNum(){return Members.size();};
   std::string getMember(int i){return Members[i];};

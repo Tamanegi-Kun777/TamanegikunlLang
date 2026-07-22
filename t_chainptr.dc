@@ -1,0 +1,8 @@
+class Inner { int* arr; }
+class Outer { Inner in; }
+int main(){
+  Outer o;
+  o.in.arr = malloc(8 * sizeof(int));
+  o.in.arr[5] = 42;
+  return o.in.arr[5];
+}

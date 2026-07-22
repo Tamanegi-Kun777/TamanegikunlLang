@@ -675,6 +675,22 @@ BaseAST *Parser::visitAssignmentExpression(){
               }
               chain->addMember(Tokens->getCurString());
               Tokens->getNextToken();
+              if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "["){
+                Tokens->getNextToken();
+                BaseAST *midx = visitAssignmentExpression();
+                if(!midx){
+                  SAFE_DELETE(chain);
+                  Tokens->applyTokenIndex(bkup);
+                  return NULL;
+                }
+                if(!(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "]")){
+                  SAFE_DELETE(chain);
+                  Tokens->applyTokenIndex(bkup);
+                  return NULL;
+                }
+                Tokens->getNextToken();
+                chain->setMemberIndex(midx);
+              }
             }
             if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "["){
               Tokens->getNextToken();
@@ -974,15 +990,31 @@ BaseAST *Parser::visitPrimaryExpression(){
           ChainMemberAccessAST *chain = new ChainMemberAccessAST(var_name);
           chain->addMember(member_name);
           while(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "."){
-            Tokens->getNextToken();
-            if(Tokens->getCurType() != TOK_IDENTIFIER){
-              SAFE_DELETE(chain);
-              Tokens->applyTokenIndex(bkup);
-              return NULL;
+              Tokens->getNextToken();
+              if(Tokens->getCurType() != TOK_IDENTIFIER){
+                SAFE_DELETE(chain);
+                Tokens->applyTokenIndex(bkup);
+                return NULL;
+              }
+              chain->addMember(Tokens->getCurString());
+              Tokens->getNextToken();
+              if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "["){
+                Tokens->getNextToken();
+                BaseAST *midx = visitAssignmentExpression();
+                if(!midx){
+                  SAFE_DELETE(chain);
+                  Tokens->applyTokenIndex(bkup);
+                  return NULL;
+                }
+                if(!(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "]")){
+                  SAFE_DELETE(chain);
+                  Tokens->applyTokenIndex(bkup);
+                  return NULL;
+                }
+                Tokens->getNextToken();
+                chain->setMemberIndex(midx);
+              }
             }
-            chain->addMember(Tokens->getCurString());
-            Tokens->getNextToken();
-          }
         if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "["){
             Tokens->getNextToken();
             BaseAST *cidx = visitAssignmentExpression();
