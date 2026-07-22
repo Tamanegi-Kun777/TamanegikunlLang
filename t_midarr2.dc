@@ -1,0 +1,7 @@
+class I { int arr[4]; }
+class O { I mid[3]; }
+int main(){
+  O o;
+  o.mid[1].arr[2] = 42;
+  return o.mid[1].arr[2];
+}
