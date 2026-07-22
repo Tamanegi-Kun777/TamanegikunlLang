@@ -204,6 +204,14 @@ TokenStream *LexicalAnalysis(std::string input_filename){
             next_token = new Token(token_str, TOK_SYMBOL, line_num);
           }
         }
+ 
+        else if((next_char == '+' && index < length && cur_line.at(index) == '+') ||
+                (next_char == '-' && index < length && cur_line.at(index) == '-')){
+          token_str += next_char;
+          token_str += next_char;
+          index++;
+          next_token = new Token(token_str, TOK_SYMBOL, line_num);
+        }
         else if((next_char == '+' || next_char == '-' || next_char == '*' ||
                  next_char == '/' || next_char == '%') &&
                 index < length && cur_line.at(index) == '='){
