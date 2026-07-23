@@ -829,7 +829,7 @@ else if(Tokens->getCurType() == TOK_SYMBOL && Tokens->getCurString() == "["){
               (Tokens->getCurString() == "+=" || Tokens->getCurString() == "-=" ||
                Tokens->getCurString() == "*=" || Tokens->getCurString() == "/=" ||
                Tokens->getCurString() == "%=")){
-        if(!llvm::isa<MemberAccessAST>(lhs)){
+        if(!llvm::isa<VariableAST>(lhs)){
           SAFE_DELETE(lhs);
           Tokens->applyTokenIndex(bkup);
           return NULL;
